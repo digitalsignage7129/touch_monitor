@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>工事案内タッチサイネージ プロトタイプ</title>
+<style>
+  :root{
+    --bg: #1B2430;
+    --panel: #26313F;
+    --panel-hi: #2F3D4D;
+    --accent: #F5A623;
+    --safety: #FF6B35;
+    --text: #F2F0EA;
+    --text-dim: #8FA0B3;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:100%; height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family: "Zen Kaku Gothic New","Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  #app{position:relative; width:100vw; height:100vh;}
+  .stripe-bar{
+    height:14px; width:100%;
+    background: repeating-linear-gradient(135deg, var(--accent) 0 18px, var(--bg) 18px 36px);
+    flex-shrink:0;
+  }
+  header{ display:flex; flex-direction:column; padding: 28px 44px 18px; flex-shrink:0; }
+  .eyebrow{ font-size:15px; letter-spacing:0.12em; color:var(--accent); font-weight:700; margin-bottom:6px; }
+  h1{ font-size:34px; font-weight:900; letter-spacing:0.02em; }
+  .sub{ margin-top:8px; font-size:16px; color:var(--text-dim); }
+  #grid-view{ display:flex; flex-direction:column; height:100%; }
+  .grid-wrap{
+    flex:1; padding: 10px 44px 44px;
+    display:grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
+    align-content:start; overflow-y:auto;
+  }
+  .tile{
+    background:var(--panel); border-radius:18px; aspect-ratio: 4/3;
+    position:relative; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    cursor:pointer; border: 2px solid transparent;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .tile:active{ transform: scale(0.96); border-color:var(--accent); background:var(--panel-hi); }
+  .tile-media{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .tile-media img{ width:100%; height:100%; object-fit:cover; opacity:0.9; }
+  .tile-media .fallback-icon{ font-size:56px; opacity:0.5; }
+  .tile-label{
+    position:relative; padding: 16px 18px 16px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0));
+    font-size:19px; font-weight:700;
+  }
+  .tile-tag{
+    position:absolute; top:14px; left:14px; font-size:12px; font-weight:700; letter-spacing:.05em;
+    background:var(--accent); color:#20242b; padding:4px 10px; border-radius:999px;
+  }
+  footer{
+    flex-shrink:0; padding: 16px 44px; display:flex; justify-content:space-between; align-items:center;
+    border-top:1px solid rgba(255,255,255,0.08); font-size:14px; color:var(--text-dim);
+  }
+  .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--safety); margin-right:8px; box-shadow: 0 0 0 4px rgba(255,107,53,0.18); }
+  #viewer-view{ display:none; position:absolute; inset:0; background:#000; flex-direction:column; }
+  #viewer-view.active{ display:flex; }
+  .viewer-stage{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:22px; text-align:center; padding:24px; background:#10151c;
+  }
+  .viewer-stage img, .viewer-stage video{ max-width:100%; max-height:100%; }
+  .viewer-icon{ font-size:110px; opacity:0.35; margin-bottom:18px; display:block; }
+  .viewer-bar{ flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding: 20px 32px; background:var(--panel); }
+  .back-btn{ display:flex; align-items:center; gap:10px; background:var(--panel-hi); border:none; color:var(--text); font-size:18px; font-weight:700; padding: 16px 28px; border-radius:14px; cursor:pointer; }
+  .back-btn:active{ background:var(--accent); color:#20242b; }
+  .viewer-title{ font-size:17px; font-weight:700; color:var(--text-dim); }
+  #syncBadge{ font-size:12px; padding:3px 9px; border-radius:999px; background:var(--panel-hi); margin-left:10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="grid-view">
+    <div class="stripe-bar"></div>
+    <header>
+      <div class="eyebrow">工事のお知らせ / SITE INFORMATION</div>
+      <h1>ご覧になりたい項目をタップしてください</h1>
+      <div class="sub">工事の進捗状況や周辺への影響について、写真・動画でご案内しています</div>
+    </header>
+    <div class="grid-wrap" id="gridWrap"></div>
+    <footer>
+      <div><span class="dot"></span>コンテンツは定期的に更新されます<span id="syncBadge">確認中…</span></div>
+      <div id="clock"></div>
+    </footer>
+  </div>
+  <div id="viewer-view">
+    <div class="viewer-stage" id="viewerStage"></div>
+    <div class="viewer-bar">
+      <button class="back-btn" id="backBtn">&larr; 一覧に戻る</button>
+      <div class="viewer-title" id="viewerTitle"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   同期ロジック(Service Worker + Cache Storage 方式)
+   - manifest.json のバージョンをチェック(起動時 + 10分おき)
+   - 変更があれば差分だけ media/icon をダウンロードしキャッシュ
+   - 表示はキャッシュ済みコンテンツから行う(ネット無しでも可)
+   ========================================================= */
+
+const MANIFEST_URL = "manifest.json";
+const CONTENT_CACHE = "signage-content-v1";
+const VERSION_KEY = new Request("https://internal.local/content-version-marker");
+const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
+
+let currentManifest = null;
+
+// Service Worker登録(オフライン時のアプリ本体表示を保証)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+async function getCachedVersion(cache) {
+  const res = await cache.match(VERSION_KEY);
+  return res ? await res.text() : null;
+}
+
+async function setCachedVersion(cache, version) {
+  await cache.put(VERSION_KEY, new Response(version));
+}
+
+async function fetchManifest() {
+  // まずネットから取得を試み、失敗すればキャッシュ済みmanifestを使う
+  const cache = await caches.open(CONTENT_CACHE);
+  try {
+    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("network response not ok");
+    return { manifest: await res.clone().json(), raw: res, fromNetwork: true };
+  } catch (e) {
+    const cached = await cache.match(MANIFEST_URL);
+    if (cached) return { manifest: await cached.json(), fromNetwork: false };
+    return null;
+  }
+}
+
+async function syncContent() {
+  setSyncBadge("確認中…");
+  const cache = await caches.open(CONTENT_CACHE);
+  const result = await fetchManifest();
+  if (!result) { setSyncBadge("オフライン(前回データ表示中)"); return; }
+
+  const { manifest, fromNetwork } = result;
+  const localVersion = await getCachedVersion(cache);
+
+  if (!fromNetwork) {
+    // ネット不通 → 既存キャッシュのままレンダリング
+    currentManifest = manifest;
+    renderGrid(manifest);
+    setSyncBadge("オフライン(前回データ表示中)");
+    return;
+  }
+
+  if (localVersion === manifest.version) {
+    currentManifest = manifest;
+    renderGrid(manifest);
+    setSyncBadge("最新の状態です");
+    return;
+  }
+
+  // 差分ダウンロード:media / icon をキャッシュへ保存
+  setSyncBadge("更新をダウンロード中…");
+  try {
+    for (const item of manifest.items) {
+      for (const path of [item.icon, item.media]) {
+        if (!path) continue;
+        const already = await cache.match(path);
+        if (already) continue; // 既に取得済みならスキップ
+        const fileRes = await fetch(path);
+        if (fileRes.ok) await cache.put(path, fileRes.clone());
+      }
+    }
+    // すべて成功してから manifest 本体とバージョンを確定保存
+    await cache.put(MANIFEST_URL, new Response(JSON.stringify(manifest)));
+    await setCachedVersion(cache, manifest.version);
+    currentManifest = manifest;
+    renderGrid(manifest);
+    setSyncBadge("更新完了");
+  } catch (e) {
+    setSyncBadge("更新に失敗(次回再試行)");
+    // 失敗時は既存キャッシュがあればそれで表示を継続
+    const cachedManifest = await cache.match(MANIFEST_URL);
+    if (cachedManifest) {
+      currentManifest = await cachedManifest.json();
+      renderGrid(currentManifest);
+    }
+  }
+}
+
+function setSyncBadge(text){
+  document.getElementById("syncBadge").textContent = text;
+}
+
+async function resolveMediaUrl(path){
+  const cache = await caches.open(CONTENT_CACHE);
+  const cached = await cache.match(path);
+  if (cached) return URL.createObjectURL(await cached.blob());
+  return path; // キャッシュになければ直接パスを試みる
+}
+
+async function renderGrid(manifest){
+  const gridWrap = document.getElementById('gridWrap');
+  gridWrap.innerHTML = "";
+  for (const it of manifest.items) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    const iconUrl = await resolveMediaUrl(it.icon).catch(() => null);
+    tile.innerHTML = `
+      <div class="tile-tag">${it.tag}</div>
+      <div class="tile-media">${iconUrl ? `<img src="${iconUrl}" alt="">` : `<span class="fallback-icon">${it.type === 'video' ? '🎬' : '🖼️'}</span>`}</div>
+      <div class="tile-label">${it.label}</div>
+    `;
+    tile.addEventListener('click', () => openViewer(it));
+    gridWrap.appendChild(tile);
+  }
+}
+
+async function openViewer(it){
+  document.getElementById('viewerTitle').textContent = it.label;
+  const stage = document.getElementById('viewerStage');
+  const mediaUrl = await resolveMediaUrl(it.media).catch(() => null);
+  if (mediaUrl && it.type === 'video') {
+    stage.innerHTML = `<video src="${mediaUrl}" controls autoplay></video>`;
+  } else if (mediaUrl && it.type === 'image') {
+    stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label}">`;
+  } else {
+    stage.innerHTML = `<div><span class="viewer-icon">${it.type === 'video' ? '🎬' : '🖼️'}</span><div>コンテンツを取得できませんでした</div></div>`;
+  }
+  document.getElementById('viewer-view').classList.add('active');
+}
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('viewer-view').classList.remove('active');
+  document.getElementById('viewerStage').innerHTML = "";
+});
+
+function tick(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+tick();
+setInterval(tick, 1000 * 30);
+
+// 起動時チェック + 10分おきチェック
+syncContent();
+setInterval(syncContent, SYNC_INTERVAL_MS);
+</script>
+</body>
+</html>
