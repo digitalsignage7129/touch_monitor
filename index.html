@@ -13,6 +13,8 @@
     --safety: #FF6B35;
     --text: #F2F0EA;
     --text-dim: #8FA0B3;
+    --good: #7CD98A;
+    --bad: #FF6B6B;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{
@@ -53,6 +55,7 @@
     cursor:default; display:flex; align-items:center; justify-content:center;
     color:var(--text-dim); font-size:14px; opacity:0.4;
   }
+  .tile.quiz-tile{ background: linear-gradient(135deg, #2F3D4D, #26313F); }
   .tile:not(.empty):active{ transform: scale(0.97); border-color:var(--accent); background:var(--panel-hi); }
   .tile-media{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#10151c; }
   .tile-media img, .tile-media video{ width:100%; height:100%; object-fit:cover; }
@@ -83,7 +86,7 @@
   .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--safety); margin-right:8px; box-shadow: 0 0 0 4px rgba(255,107,53,0.18); }
   #syncBadge{ font-size:11px; padding:2px 8px; border-radius:999px; background:var(--panel-hi); margin-left:10px; }
 
-  /* ---- ビューア ---- */
+  /* ---- メディアビューア(画像・動画・PDF) ---- */
   #viewer-view{ display:none; position:absolute; inset:0; background:#000; }
   #viewer-view.active{ display:block; }
   .viewer-stage{
@@ -92,8 +95,8 @@
     color:var(--text-dim); font-size:20px; text-align:center; background:#000;
   }
   .viewer-stage img, .viewer-stage video{ max-width:100%; max-height:100%; }
+  .viewer-stage iframe{ width:100%; height:100%; border:none; background:#fff; }
 
-  /* 常時最前面に表示される戻るバー(動画再生中でも必ず押せる) */
   .viewer-topbar{
     position:absolute; top:0; left:0; right:0; z-index:50;
     display:flex; align-items:center; justify-content:space-between;
@@ -111,6 +114,32 @@
   }
   .back-btn:active{ background:var(--accent); color:#20242b; }
   .viewer-title{ pointer-events:auto; font-size:15px; font-weight:700; color:var(--text); background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:10px; }
+
+  /* ---- クイズビューア ---- */
+  #quiz-view{ display:none; position:absolute; inset:0; background: linear-gradient(160deg, #1B2430, #263444); }
+  #quiz-view.active{ display:flex; flex-direction:column; }
+  .quiz-body{
+    flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 90px 60px 40px; text-align:center;
+  }
+  .quiz-progress{ font-size:15px; color:var(--accent); font-weight:700; margin-bottom:14px; }
+  .quiz-question{ font-size:30px; font-weight:900; max-width:900px; margin-bottom:36px; line-height:1.5; }
+  .quiz-choices{ display:grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap:18px; width:100%; max-width:900px; }
+  .quiz-choice{
+    background:var(--panel); border:3px solid transparent; border-radius:16px;
+    padding:22px 20px; font-size:20px; font-weight:700; cursor:pointer; color:var(--text);
+  }
+  .quiz-choice:active{ transform: scale(0.98); }
+  .quiz-choice.correct{ border-color:var(--good); background:#1F3327; }
+  .quiz-choice.wrong{ border-color:var(--bad); background:#3A1F1F; }
+  .quiz-explain{ margin-top:26px; font-size:17px; color:var(--text-dim); max-width:820px; line-height:1.6; }
+  .quiz-next{
+    margin-top:30px; background:var(--accent); color:#20242b; border:none;
+    padding:16px 46px; border-radius:14px; font-size:18px; font-weight:800; cursor:pointer;
+  }
+  .quiz-result-emoji{ font-size:70px; margin-bottom:10px; }
+  .quiz-result-text{ font-size:26px; font-weight:900; margin-bottom:10px; }
+  .quiz-result-sub{ font-size:17px; color:var(--text-dim); max-width:700px; line-height:1.7; }
 </style>
 </head>
 <body>
@@ -139,22 +168,29 @@
     </div>
   </div>
 
+  <div id="quiz-view">
+    <div class="viewer-topbar">
+      <button class="back-btn" id="quizBackBtn">&larr; 一覧に戻る</button>
+      <div class="viewer-title">日本国土開発クイズ</div>
+    </div>
+    <div class="quiz-body" id="quizBody"></div>
+  </div>
+
 </div>
 
 <script>
 /* =========================================================
-   6枠固定表示 + manifest.json 同期(起動時 + 10分おき)
-   ・manifest.json の各 item は slot(1〜6) を持つ
-   ・media は R2 等の絶対URL(または相対パス)どちらでも可
-   ・動画はサムネイル用アイコンを別途持たず、動画自体の
-     先頭フレームをそのままタイル表示に使う
+   5枠(アップロード可能) + 1枠固定クイズ の計6枠表示
+   ・manifest.json 各itemは slot(1〜5)を持つ
+   ・type: image / video / pdf に対応
+   ・動画サムネイルは再生させず、静止画キャプチャに変換して表示
    ========================================================= */
 
 const MANIFEST_URL = "manifest.json";
-const CONTENT_CACHE = "signage-content-v2";
+const CONTENT_CACHE = "signage-content-v3";
 const VERSION_KEY = new Request("https://internal.local/content-version-marker");
 const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
-const SLOT_COUNT = 6;
+const SLOT_COUNT = 5; // アップロード枠は5つ(残り1枠は固定クイズ)
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
@@ -171,10 +207,7 @@ async function setCachedVersion(cache, version) {
 async function fetchManifest() {
   const cache = await caches.open(CONTENT_CACHE);
   try {
-    // GitHub PagesのCDN(Fastly)側キャッシュを確実に回避するため、
-    // 毎回変わるクエリパラメータ(タイムスタンプ)を付与する。
-    // これが無いと、cache:"no-store" を指定してもCDN側の古い応答が
-    // 返り続け、更新が反映されないことがある。
+    // GitHub PagesのCDNキャッシュを確実に回避するため、毎回変わるパラメータを付与
     const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("network response not ok");
     return { manifest: await res.clone().json(), fromNetwork: true };
@@ -247,6 +280,38 @@ function bySlot(items){
   return map;
 }
 
+// 動画の1フレームを静止画(dataURL)としてキャプチャする。
+// 動画要素をそのままサムネイルにすると再生され続けてしまうため、
+// 1枚のPNGに変換してから <img> として表示する。
+function captureVideoFrame(url){
+  return new Promise((resolve) => {
+    const v = document.createElement('video');
+    v.src = url;
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = 'auto';
+    v.crossOrigin = 'anonymous';
+    let done = false;
+    const finish = (result) => { if (!done) { done = true; resolve(result); } };
+    v.addEventListener('loadeddata', () => {
+      try { v.currentTime = Math.min(0.2, (v.duration || 1) / 4); }
+      catch (e) { finish(null); }
+    });
+    v.addEventListener('seeked', () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth || 320;
+        canvas.height = v.videoHeight || 180;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        finish(canvas.toDataURL('image/jpeg', 0.8));
+      } catch (e) { finish(null); }
+    });
+    v.addEventListener('error', () => finish(null));
+    setTimeout(() => finish(null), 6000); // 念のためのタイムアウト
+  });
+}
+
 async function renderGrid(manifest){
   const gridWrap = document.getElementById('gridWrap');
   gridWrap.innerHTML = "";
@@ -265,9 +330,12 @@ async function renderGrid(manifest){
 
     tile.className = 'tile';
     const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
+
     let mediaHtml;
-    if (it.type === 'video') {
-      mediaHtml = `<video src="${mediaUrl}" muted playsinline preload="metadata"></video><div class="play-badge"></div>`;
+    if (it.type === 'pdf') {
+      mediaHtml = `<span class="fallback-icon">📄</span>`;
+    } else if (it.type === 'video') {
+      mediaHtml = `<span class="fallback-icon">🎬</span><div class="play-badge"></div>`; // まず仮表示、後で静止画に差し替え
     } else if (mediaUrl) {
       mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
     } else {
@@ -275,21 +343,51 @@ async function renderGrid(manifest){
     }
 
     tile.innerHTML = `
-      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : '写真')}</div>
+      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : it.type === 'pdf' ? 'PDF' : '写真')}</div>
       <div class="tile-media">${mediaHtml}</div>
       <div class="tile-label">${it.label || ''}</div>
     `;
     tile.addEventListener('click', () => openViewer(it));
     gridWrap.appendChild(tile);
+
+    // 動画は静止画キャプチャが取得でき次第、サムネイルを差し替える(再生はさせない)
+    if (it.type === 'video' && mediaUrl) {
+      captureVideoFrame(mediaUrl).then((dataUrl) => {
+        if (!dataUrl) return;
+        const mediaDiv = tile.querySelector('.tile-media');
+        if (mediaDiv) {
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          mediaDiv.prepend(img);
+        }
+      });
+    }
   }
+
+  // 6枠目:固定クイズタイル
+  const quizTile = document.createElement('div');
+  quizTile.className = 'tile quiz-tile';
+  quizTile.innerHTML = `
+    <div class="tile-tag">クイズ</div>
+    <div class="tile-media"><span class="fallback-icon">🧩</span></div>
+    <div class="tile-label">日本国土開発クイズに挑戦!</div>
+  `;
+  quizTile.addEventListener('click', openQuiz);
+  gridWrap.appendChild(quizTile);
 }
 
 async function openViewer(it){
   document.getElementById('viewerTitle').textContent = it.label || '';
   const stage = document.getElementById('viewerStage');
   const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
-  if (mediaUrl && it.type === 'video') {
-    stage.innerHTML = `<video src="${mediaUrl}" controls autoplay playsinline></video>`;
+
+  if (it.type === 'pdf' && mediaUrl) {
+    stage.innerHTML = `<iframe src="${mediaUrl}"></iframe>`;
+  } else if (mediaUrl && it.type === 'video') {
+    // controlsは付けない(標準UIの再生/一時停止アイコンが常時中央に
+    // 表示され視認性を損なうため)。何も操作しなければloopで無限再生し、
+    // 戻る操作は画面上部の戻るバーのみで行う。
+    stage.innerHTML = `<video src="${mediaUrl}" autoplay loop playsinline></video>`;
   } else if (mediaUrl && it.type === 'image') {
     stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label || ''}">`;
   } else {
@@ -314,6 +412,120 @@ function tick(){
 }
 tick();
 setInterval(tick, 1000 * 30);
+
+/* =========================================================
+   日本国土開発クイズ(子供でも楽しめる、会社のイメージアップ向け全5問)
+   ========================================================= */
+
+const QUIZ_QUESTIONS = [
+  {
+    q: "日本国土開発が生まれたのは、どんな時代?",
+    choices: ["戦争が終わって、国をもう一度立て直そうとしていた時代", "恐竜がいた大昔", "まだだれも生まれていない未来"],
+    correct: 0,
+    explain: "1951年、戦争で荒れてしまった国を元気にするために生まれた会社なんだ。"
+  },
+  {
+    q: "工事の現場で活躍する、大きな力持ちの乗り物といえば?",
+    choices: ["ロケット", "ブルドーザーなどの重機", "潜水艦"],
+    correct: 1,
+    explain: "日本国土開発は、いち早くブルドーザーなどの重機を取り入れて工事をしてきたよ。"
+  },
+  {
+    q: "大きな地震で困っている街があったとき、日本国土開発は何をした?",
+    choices: ["何もせず様子を見ていた", "街から離れていった", "力を合わせて復興のお手伝いをした"],
+    correct: 2,
+    explain: "東日本大震災のときも、いち早く駆けつけて復興を支えたんだ。"
+  },
+  {
+    q: "太陽の光を電気に変える発電所も作っているよ。その発電方法は?",
+    choices: ["太陽光発電", "風車を使わない発電", "石をこすって作る発電"],
+    correct: 0,
+    explain: "たくさんの太陽光発電所を作って、地球にやさしいエネルギーづくりにも取り組んでいるよ。"
+  },
+  {
+    q: "日本国土開発が作っているものはどれ?",
+    choices: ["お菓子や洋服", "トンネルや橋、道路などの社会の土台", "楽器"],
+    correct: 1,
+    explain: "みんなが安心して暮らせるように、道路・橋・トンネルなど、街の土台を作っているよ。"
+  }
+];
+
+let quizIndex = 0;
+let quizScore = 0;
+
+function openQuiz(){
+  quizIndex = 0;
+  quizScore = 0;
+  document.getElementById('quiz-view').classList.add('active');
+  renderQuizQuestion();
+}
+
+function closeQuiz(){
+  document.getElementById('quiz-view').classList.remove('active');
+}
+
+function renderQuizQuestion(){
+  const body = document.getElementById('quizBody');
+  if (quizIndex >= QUIZ_QUESTIONS.length) {
+    renderQuizResult();
+    return;
+  }
+  const q = QUIZ_QUESTIONS[quizIndex];
+  body.innerHTML = `
+    <div class="quiz-progress">問題 ${quizIndex + 1} / ${QUIZ_QUESTIONS.length}</div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-choices" id="quizChoices"></div>
+    <div class="quiz-explain" id="quizExplain" style="display:none;"></div>
+    <button class="quiz-next" id="quizNextBtn" style="display:none;">次へ</button>
+  `;
+  const choicesWrap = document.getElementById('quizChoices');
+  q.choices.forEach((choiceText, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'quiz-choice';
+    btn.textContent = choiceText;
+    btn.addEventListener('click', () => selectQuizAnswer(i));
+    choicesWrap.appendChild(btn);
+  });
+}
+
+function selectQuizAnswer(selectedIndex){
+  const q = QUIZ_QUESTIONS[quizIndex];
+  const buttons = document.querySelectorAll('#quizChoices .quiz-choice');
+  buttons.forEach((b, i) => {
+    b.style.pointerEvents = 'none';
+    if (i === q.correct) b.classList.add('correct');
+    else if (i === selectedIndex) b.classList.add('wrong');
+  });
+  if (selectedIndex === q.correct) quizScore++;
+
+  const explainEl = document.getElementById('quizExplain');
+  explainEl.textContent = q.explain;
+  explainEl.style.display = 'block';
+
+  const nextBtn = document.getElementById('quizNextBtn');
+  nextBtn.style.display = 'inline-block';
+  nextBtn.textContent = (quizIndex === QUIZ_QUESTIONS.length - 1) ? "結果を見る" : "次へ";
+  nextBtn.onclick = () => { quizIndex++; renderQuizQuestion(); };
+}
+
+function renderQuizResult(){
+  const body = document.getElementById('quizBody');
+  const total = QUIZ_QUESTIONS.length;
+  let emoji = "🌱";
+  let msg = "また挑戦してね!";
+  if (quizScore === total) { emoji = "🏆"; msg = "パーフェクト!日本国土開発博士だね!"; }
+  else if (quizScore >= Math.ceil(total * 0.6)) { emoji = "🎉"; msg = "よくできました!"; }
+
+  body.innerHTML = `
+    <div class="quiz-result-emoji">${emoji}</div>
+    <div class="quiz-result-text">${quizScore} / ${total} 問正解!</div>
+    <div class="quiz-result-sub">${msg}<br>日本国土開発は、みんなの街を元気にするお仕事をしています。</div>
+    <button class="quiz-next" id="quizRetryBtn">もう一度挑戦する</button>
+  `;
+  document.getElementById('quizRetryBtn').addEventListener('click', openQuiz);
+}
+
+document.getElementById('quizBackBtn').addEventListener('click', closeQuiz);
 
 syncContent();
 setInterval(syncContent, SYNC_INTERVAL_MS);
