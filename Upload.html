@@ -60,14 +60,15 @@
     <select id="type">
       <option value="image">写真</option>
       <option value="video">動画</option>
+      <option value="pdf">PDF</option>
     </select>
 
-    <label>配置スロット(1〜6のどこに表示するか)</label>
+    <label>配置スロット(1〜5のどこに表示するか。6枠目は固定のクイズです)</label>
     <div class="slot-grid" id="slotGrid"></div>
     <div class="hint">既に使われているスロットを選ぶと、その位置の内容だけが置き換わります</div>
 
     <label>ファイル</label>
-    <input type="file" id="file" accept="image/*,video/*">
+    <input type="file" id="file" accept="image/*,video/*,application/pdf">
 
     <button id="submitBtn">アップロードする</button>
     <div id="status"></div>
@@ -79,7 +80,7 @@
 
   let selectedSlot = null;
   const slotGrid = document.getElementById("slotGrid");
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 5; i++) {
     const el = document.createElement("div");
     el.className = "slot-opt";
     el.textContent = `枠 ${i}`;
