@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-24T10:00:00+09:00",
+  "version": "2026-08-24T08:43:15.055Z",
   "items": [
     {
       "id": "item_001",
@@ -54,6 +54,15 @@
       "icon": "media/icon_006.png",
       "media": "media/image_006.jpg",
       "updated_at": "2026-07-28T10:00:00+09:00"
+    },
+    {
+      "id": "item_1787560993188",
+      "type": "video",
+      "tag": "動画",
+      "label": "日本国土開発PV",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787560993188.mp4",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787560993188.mp4",
+      "updated_at": "2026-08-24T08:43:15.055Z"
     }
   ]
 }
