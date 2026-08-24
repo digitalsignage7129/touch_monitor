@@ -1,114 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>コンテンツ管理 - アップロード</title>
 <style>
-  :root{
-    --bg:#1B2430; --panel:#26313F; --accent:#F5A623; --text:#F2F0EA; --text-dim:#8FA0B3;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-    font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;
-    display:flex; align-items:center; justify-content:center; padding:24px;
-  }
-  .card{
-    background:var(--panel); border-radius:20px; padding:36px;
-    width:100%; max-width:440px;
-  }
-  h1{ font-size:22px; margin-bottom:6px; }
-  .sub{ color:var(--text-dim); font-size:14px; margin-bottom:24px; }
-  label{ display:block; font-size:14px; margin:16px 0 6px; color:var(--text-dim); }
-  input[type=text], input[type=password], select{
-    width:100%; padding:12px 14px; border-radius:10px; border:none;
-    background:#1E2733; color:var(--text); font-size:15px;
-  }
-  input[type=file]{ width:100%; margin-top:4px; color:var(--text-dim); }
-  button{
-    width:100%; margin-top:26px; padding:14px; border:none; border-radius:12px;
-    background:var(--accent); color:#20242b; font-size:16px; font-weight:700; cursor:pointer;
-  }
-  button:disabled{ opacity:0.5; cursor:not-allowed; }
-  #status{ margin-top:16px; font-size:14px; text-align:center; min-height:20px; }
-  #status.ok{ color:#7CD98A; }
-  #status.err{ color:#FF6B6B; }
+  :root{--bg:#1B2430;--panel:#26313F;--accent:#F5A623;--text:#F2F0EA;--text-dim:#8FA0B3}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;display:flex;align-items:center;justify-content:center;padding:24px}.card{background:var(--panel);border-radius:20px;padding:36px;width:100%;max-width:440px}h1{font-size:22px;margin-bottom:6px}.sub{color:var(--text-dim);font-size:14px;margin-bottom:24px}label{display:block;font-size:14px;margin:16px 0 6px;color:var(--text-dim)}input[type=text],input[type=password],select{width:100%;padding:12px 14px;border-radius:10px;border:none;background:#1E2733;color:var(--text);font-size:15px}input[type=file]{width:100%;margin-top:4px;color:var(--text-dim)}button{width:100%;margin-top:26px;padding:14px;border:0;border-radius:12px;background:var(--accent);color:#20242b;font-size:16px;font-weight:700;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}#status{margin-top:16px;font-size:14px;text-align:center;min-height:20px}#status.ok{color:#7CD98A}#status.err{color:#FF6B6B}
 </style>
 </head>
-<body>
-  <div class="card">
-    <h1>コンテンツのアップロード</h1>
-    <div class="sub">現場モニターに表示する画像・動画を追加できます</div>
-
-    <label>パスワード</label>
-    <input type="password" id="password" placeholder="担当者から共有されたパスワード">
-
-    <label>表示名(モニター画面に表示される名称)</label>
-    <input type="text" id="label" placeholder="例:工事の進め方について">
-
-    <label>種別</label>
-    <select id="type">
-      <option value="image">写真</option>
-      <option value="video">動画</option>
-    </select>
-
-    <label>ファイル</label>
-    <input type="file" id="file" accept="image/*,video/*">
-
-    <button id="submitBtn">アップロードする</button>
-    <div id="status"></div>
-  </div>
-
+<body><div class="card">
+  <h1>コンテンツのアップロード</h1><div class="sub">現場モニターに表示する画像・動画を追加できます</div>
+  <label>パスワード</label><input type="password" id="password" placeholder="担当者から共有されたパスワード">
+  <label>表示名（モニター画面に表示される名称）</label><input type="text" id="label" placeholder="例:工事の進め方について">
+  <label>種別</label><select id="type"><option value="image">写真</option><option value="video">動画</option></select>
+  <label>ファイル</label><input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+  <button id="submitBtn">アップロードする</button><div id="status"></div>
+</div>
 <script>
-  // ↓ Cloudflare Workers デプロイ後のURLに書き換えてください
-  const WORKER_URL = "https://little-voice-be13.test-digital-signage-test.workers.dev";
-
-  const submitBtn = document.getElementById("submitBtn");
-  const statusEl = document.getElementById("status");
-
-  submitBtn.addEventListener("click", async () => {
-    const password = document.getElementById("password").value;
-    const label = document.getElementById("label").value.trim();
-    const type = document.getElementById("type").value;
-    const fileInput = document.getElementById("file");
-    const file = fileInput.files[0];
-
-    if (!password || !label || !file) {
-      setStatus("パスワード・表示名・ファイルをすべて入力してください", "err");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("password", password);
-    formData.append("label", label);
-    formData.append("type", type);
-    formData.append("file", file);
-
-    submitBtn.disabled = true;
-    setStatus("アップロード中です。画面を閉じずにお待ちください…", "");
-
-    try {
-      const res = await fetch(WORKER_URL, { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.ok) {
-        setStatus("アップロードが完了しました。数分後にモニターへ反映されます。", "ok");
-        document.getElementById("label").value = "";
-        fileInput.value = "";
-      } else {
-        setStatus("エラー: " + data.error, "err");
-      }
-    } catch (e) {
-      setStatus("通信エラーが発生しました。時間をおいて再度お試しください。", "err");
-    } finally {
-      submitBtn.disabled = false;
-    }
-  });
-
-  function setStatus(text, cls){
-    statusEl.textContent = text;
-    statusEl.className = cls;
-  }
-</script>
-</body>
-</html>
+const WORKER_URL = "https://little-voice-be13.test-digital-signage-test.workers.dev";
+const submitBtn = document.getElementById("submitBtn");
+const statusEl = document.getElementById("status");
+submitBtn.addEventListener("click", async () => {
+  const password = document.getElementById("password").value;
+  const label = document.getElementById("label").value.trim();
+  const type = document.getElementById("type").value;
+  const fileInput = document.getElementById("file");
+  const file = fileInput.files[0];
+  if (!password || !label || !file) return setStatus("パスワード・表示名・ファイルをすべて入力してください", "err");
+  submitBtn.disabled = true; setStatus("アップロード中です。画面を閉じずにお待ちください…", "");
+  try {
+    const res = await fetch(WORKER_URL, { method: "POST", headers: {
+      "Content-Type": file.type || "application/octet-stream", "X-Upload-Password": password,
+      "X-Label": label, "X-Media-Type": type, "X-File-Name": file.name,
+    }, body: file });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "アップロードに失敗しました");
+    setStatus("アップロードが完了しました。次回の同期時にモニターへ反映されます。", "ok");
+    document.getElementById("label").value = ""; fileInput.value = "";
+  } catch (error) { setStatus("エラー: " + error.message, "err"); }
+  finally { submitBtn.disabled = false; }
+});
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls; }
+</script></body></html>
