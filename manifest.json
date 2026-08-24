@@ -1,4 +1,14 @@
 {
-  "version": "2026-08-24T00:00:00.000Z",
-  "items": []
+  "version": "2026-08-24T09:22:41.340Z",
+  "items": [
+    {
+      "id": "item_1787563359386",
+      "slot": 1,
+      "type": "video",
+      "tag": "動画",
+      "label": "日本国土開発PV",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787563359386.mp4",
+      "updated_at": "2026-08-24T09:22:41.340Z"
+    }
+  ]
 }
