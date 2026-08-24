@@ -5,133 +5,314 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>工事案内タッチサイネージ</title>
 <style>
-  :root { --bg:#1b2430; --panel:#26313f; --panel-hi:#2f3d4d; --accent:#f5a623; --text:#f2f0ea; --dim:#8fa0b3; --alert:#ff6b35; }
-  * { box-sizing:border-box; }
-  html, body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--bg); color:var(--text); font-family:"Noto Sans JP","Yu Gothic",sans-serif; -webkit-user-select:none; user-select:none; }
-  #app { width:100vw; height:100vh; position:relative; }
-  #grid-view { height:100%; display:flex; flex-direction:column; }
-  .stripe { height:14px; flex:0 0 auto; background:repeating-linear-gradient(135deg,var(--accent) 0 18px,var(--bg) 18px 36px); }
-  header { flex:0 0 auto; padding:22px 36px 14px; }
-  .eyebrow { color:var(--accent); font-size:14px; font-weight:700; letter-spacing:.12em; }
-  h1 { margin:5px 0 0; font-size:31px; line-height:1.2; }
-  .sub { margin-top:6px; color:var(--dim); font-size:15px; }
+  :root{
+    --bg: #1B2430;
+    --panel: #26313F;
+    --panel-hi: #2F3D4D;
+    --accent: #F5A623;
+    --safety: #FF6B35;
+    --text: #F2F0EA;
+    --text-dim: #8FA0B3;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:100%; height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family: "Zen Kaku Gothic New","Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  #app{position:relative; width:100vw; height:100vh; display:flex; flex-direction:column;}
+  .stripe-bar{
+    height:12px; width:100%;
+    background: repeating-linear-gradient(135deg, var(--accent) 0 18px, var(--bg) 18px 36px);
+    flex-shrink:0;
+  }
+  header{ display:flex; flex-direction:column; padding: 18px 40px 12px; flex-shrink:0; }
+  .eyebrow{ font-size:14px; letter-spacing:0.12em; color:var(--accent); font-weight:700; margin-bottom:4px; }
+  h1{ font-size:26px; font-weight:900; letter-spacing:0.02em; }
 
-  /* 1920 x 1080: seven current cards fit in a 4 x 2 grid without scrolling. */
-  #grid { flex:1 1 auto; min-height:0; padding:8px 32px 20px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:18px; overflow:hidden; }
-  .tile { min-height:0; position:relative; overflow:hidden; border:2px solid transparent; border-radius:18px; background:var(--panel); cursor:pointer; transition:transform .12s ease,border-color .12s ease; }
-  .tile:active { transform:scale(.975); border-color:var(--accent); }
-  .tile-media { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#1d2834; }
-  .tile-media img { width:100%; height:100%; object-fit:cover; opacity:.88; }
-  .tile-fallback { font-size:64px; opacity:.55; }
-  .tile-label { position:absolute; inset:auto 0 0; padding:34px 16px 15px; font-size:18px; font-weight:700; background:linear-gradient(transparent,rgba(0,0,0,.82)); }
-  .tile-tag { position:absolute; z-index:1; top:12px; left:12px; border-radius:999px; padding:4px 9px; background:var(--accent); color:#20242b; font-size:12px; font-weight:800; }
-  footer { flex:0 0 auto; height:48px; padding:0 36px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,.1); color:var(--dim); font-size:13px; }
-  .dot { display:inline-block; width:9px; height:9px; margin-right:7px; border-radius:50%; background:var(--alert); }
-  #sync { margin-left:8px; border-radius:999px; padding:3px 8px; background:var(--panel-hi); }
+  #grid-view{ flex:1; min-height:0; display:flex; flex-direction:column; }
+  .grid-wrap{
+    flex:1; min-height:0;
+    padding: 8px 40px 16px;
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .tile{
+    background:var(--panel); border-radius:16px;
+    position:relative; overflow:hidden; min-height:0;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    cursor:pointer; border: 2px solid transparent;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .tile.empty{
+    cursor:default; display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:14px; opacity:0.4;
+  }
+  .tile:not(.empty):active{ transform: scale(0.97); border-color:var(--accent); background:var(--panel-hi); }
+  .tile-media{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#10151c; }
+  .tile-media img, .tile-media video{ width:100%; height:100%; object-fit:cover; }
+  .tile-media .fallback-icon{ font-size:48px; opacity:0.5; }
+  .tile-label{
+    position:relative; padding: 14px 16px 14px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    font-size:18px; font-weight:700;
+  }
+  .tile-tag{
+    position:absolute; top:12px; left:12px; font-size:11px; font-weight:700; letter-spacing:.05em;
+    background:var(--accent); color:#20242b; padding:3px 9px; border-radius:999px; z-index:2;
+  }
+  .play-badge{
+    position:absolute; top:12px; right:12px; z-index:2;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
+  }
+  .play-badge::after{
+    content:""; width:0; height:0; margin-left:3px;
+    border-left:11px solid var(--text); border-top:7px solid transparent; border-bottom:7px solid transparent;
+  }
 
-  #viewer { position:absolute; inset:0; display:none; flex-direction:column; background:#000; }
-  #viewer.active { display:flex; }
-  #stage { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; }
-  #stage img, #stage video { max-width:100%; max-height:100%; }
-  #viewer-bar { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:16px 28px; background:var(--panel); }
-  #back { border:0; border-radius:12px; padding:13px 22px; background:var(--panel-hi); color:var(--text); font-size:17px; font-weight:700; }
-  #title { color:var(--dim); font-weight:700; }
-  @media (max-width:1200px) { #grid { grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr)); } h1 { font-size:25px; } }
+  footer{
+    flex-shrink:0; padding: 10px 40px; display:flex; justify-content:space-between; align-items:center;
+    border-top:1px solid rgba(255,255,255,0.08); font-size:13px; color:var(--text-dim);
+  }
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--safety); margin-right:8px; box-shadow: 0 0 0 4px rgba(255,107,53,0.18); }
+  #syncBadge{ font-size:11px; padding:2px 8px; border-radius:999px; background:var(--panel-hi); margin-left:10px; }
+
+  /* ---- ビューア ---- */
+  #viewer-view{ display:none; position:absolute; inset:0; background:#000; }
+  #viewer-view.active{ display:block; }
+  .viewer-stage{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:20px; text-align:center; background:#000;
+  }
+  .viewer-stage img, .viewer-stage video{ max-width:100%; max-height:100%; }
+
+  /* 常時最前面に表示される戻るバー(動画再生中でも必ず押せる) */
+  .viewer-topbar{
+    position:absolute; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0));
+    pointer-events:none;
+  }
+  .back-btn{
+    pointer-events:auto;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(38,49,63,0.92);
+    border:2px solid var(--accent);
+    color:var(--text); font-size:18px; font-weight:700;
+    padding: 14px 26px; border-radius:14px; cursor:pointer;
+  }
+  .back-btn:active{ background:var(--accent); color:#20242b; }
+  .viewer-title{ pointer-events:auto; font-size:15px; font-weight:700; color:var(--text); background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:10px; }
 </style>
 </head>
 <body>
-<main id="app">
-  <section id="grid-view">
-    <div class="stripe"></div>
-    <header><div class="eyebrow">工事のお知らせ / SITE INFORMATION</div><h1>ご覧になりたい項目をタップしてください</h1><div class="sub">工事の進捗状況や周辺への影響について、写真・動画でご案内しています</div></header>
-    <div id="grid"></div>
-    <footer><div><span class="dot"></span>コンテンツは定期的に更新されます<span id="sync">確認中…</span></div><div id="clock"></div></footer>
-  </section>
-  <section id="viewer"><div id="stage"></div><div id="viewer-bar"><button id="back">← 一覧に戻る</button><div id="title"></div></div></section>
-</main>
+<div id="app">
+
+  <div id="grid-view">
+    <div class="stripe-bar"></div>
+    <header>
+      <div class="eyebrow">工事のお知らせ / SITE INFORMATION</div>
+      <h1>ご覧になりたい項目をタップしてください</h1>
+    </header>
+
+    <div class="grid-wrap" id="gridWrap"></div>
+
+    <footer>
+      <div><span class="dot"></span>コンテンツは定期的に更新されます<span id="syncBadge">確認中…</span></div>
+      <div id="clock"></div>
+    </footer>
+  </div>
+
+  <div id="viewer-view">
+    <div class="viewer-stage" id="viewerStage"></div>
+    <div class="viewer-topbar">
+      <button class="back-btn" id="backBtn">&larr; 一覧に戻る</button>
+      <div class="viewer-title" id="viewerTitle"></div>
+    </div>
+  </div>
+
+</div>
+
 <script>
+/* =========================================================
+   6枠固定表示 + manifest.json 同期(起動時 + 10分おき)
+   ・manifest.json の各 item は slot(1〜6) を持つ
+   ・media は R2 等の絶対URL(または相対パス)どちらでも可
+   ・動画はサムネイル用アイコンを別途持たず、動画自体の
+     先頭フレームをそのままタイル表示に使う
+   ========================================================= */
+
 const MANIFEST_URL = "manifest.json";
 const CONTENT_CACHE = "signage-content-v2";
-const VERSION_KEY = new Request("https://signage.internal/content-version-v2");
-const SYNC_INTERVAL_MS = 10 * 60 * 1000;
-let currentObjectUrl = null;
+const VERSION_KEY = new Request("https://internal.local/content-version-marker");
+const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
+const SLOT_COUNT = 6;
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js?v=2").catch(() => {});
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
 
-function setSync(text) { document.getElementById("sync").textContent = text; }
-async function getVersion(cache) { const r = await cache.match(VERSION_KEY); return r ? r.text() : null; }
-async function putVersion(cache, version) { await cache.put(VERSION_KEY, new Response(version)); }
+async function getCachedVersion(cache) {
+  const res = await cache.match(VERSION_KEY);
+  return res ? await res.text() : null;
+}
+async function setCachedVersion(cache, version) {
+  await cache.put(VERSION_KEY, new Response(version));
+}
 
-async function getManifest(cache) {
+async function fetchManifest() {
+  const cache = await caches.open(CONTENT_CACHE);
   try {
-    const response = await fetch(MANIFEST_URL, { cache:"no-store" });
-    if (!response.ok) throw new Error("manifest fetch failed");
-    return { manifest:await response.clone().json(), response, online:true };
-  } catch {
+    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("network response not ok");
+    return { manifest: await res.clone().json(), fromNetwork: true };
+  } catch (e) {
     const cached = await cache.match(MANIFEST_URL);
-    return cached ? { manifest:await cached.json(), response:null, online:false } : null;
+    if (cached) return { manifest: await cached.json(), fromNetwork: false };
+    return null;
   }
 }
 
-async function sync() {
-  setSync("確認中…");
+async function syncContent() {
+  setSyncBadge("確認中…");
   const cache = await caches.open(CONTENT_CACHE);
-  const result = await getManifest(cache);
-  if (!result) { setSync("オフライン"); return; }
-  const { manifest, online } = result;
-  const localVersion = await getVersion(cache);
-  if (!online) { render(manifest); setSync("オフライン（前回データ）"); return; }
-  if (localVersion === manifest.version) { render(manifest); setSync("最新の状態です"); return; }
-  setSync("更新をダウンロード中…");
+  const result = await fetchManifest();
+  if (!result) { setSyncBadge("オフライン(前回データ表示中)"); return; }
+
+  const { manifest, fromNetwork } = result;
+  const localVersion = await getCachedVersion(cache);
+
+  if (!fromNetwork) {
+    renderGrid(manifest);
+    setSyncBadge("オフライン(前回データ表示中)");
+    return;
+  }
+
+  if (localVersion === manifest.version) {
+    renderGrid(manifest);
+    setSyncBadge("最新の状態です");
+    return;
+  }
+
+  setSyncBadge("更新をダウンロード中…");
   try {
-    for (const item of manifest.items || []) {
-      for (const url of new Set([item.icon, item.media].filter(Boolean))) {
-        if (await cache.match(url)) continue;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("media fetch failed");
-        await cache.put(url, response.clone());
-      }
+    for (const item of (manifest.items || [])) {
+      if (!item.media) continue;
+      const already = await cache.match(item.media);
+      if (already) continue;
+      try {
+        const fileRes = await fetch(item.media);
+        if (fileRes.ok) await cache.put(item.media, fileRes.clone());
+      } catch (e) { /* 個別ファイル取得失敗は無視し、次回再試行に任せる */ }
     }
     await cache.put(MANIFEST_URL, new Response(JSON.stringify(manifest)));
-    await putVersion(cache, manifest.version);
-    render(manifest); setSync("更新完了");
-  } catch (error) {
-    const old = await cache.match(MANIFEST_URL);
-    if (old) render(await old.json());
-    setSync("更新に失敗（次回再試行）");
+    await setCachedVersion(cache, manifest.version);
+    renderGrid(manifest);
+    setSyncBadge("更新完了");
+  } catch (e) {
+    setSyncBadge("更新に失敗(次回再試行)");
+    const cachedManifest = await cache.match(MANIFEST_URL);
+    if (cachedManifest) renderGrid(await cachedManifest.json());
   }
 }
 
-async function cachedUrl(url) {
-  const response = await (await caches.open(CONTENT_CACHE)).match(url);
-  return response ? URL.createObjectURL(await response.blob()) : url;
+function setSyncBadge(text){ document.getElementById("syncBadge").textContent = text; }
+
+async function resolveMediaUrl(path){
+  if (!path) return null;
+  const cache = await caches.open(CONTENT_CACHE);
+  const cached = await cache.match(path);
+  if (cached) return URL.createObjectURL(await cached.blob());
+  return path;
 }
-function isVideo(url) { return /\.(mp4|webm|mov)(\?|$)/i.test(url || ""); }
-async function render(manifest) {
-  const grid = document.getElementById("grid"); grid.replaceChildren();
-  for (const item of manifest.items || []) {
-    const tile = document.createElement("button"); tile.className = "tile"; tile.type = "button";
-    const tag = document.createElement("span"); tag.className = "tile-tag"; tag.textContent = item.tag || (item.type === "video" ? "動画" : "写真");
-    const media = document.createElement("div"); media.className = "tile-media";
-    if (item.icon && !isVideo(item.icon)) { const image = new Image(); image.src = await cachedUrl(item.icon); image.alt = ""; media.append(image); }
-    else { const fallback = document.createElement("span"); fallback.className = "tile-fallback"; fallback.textContent = item.type === "video" ? "🎬" : "🖼️"; media.append(fallback); }
-    const label = document.createElement("div"); label.className = "tile-label"; label.textContent = item.label || "名称未設定";
-    tile.append(tag, media, label); tile.addEventListener("click", () => openViewer(item)); grid.append(tile);
+
+function bySlot(items){
+  const map = {};
+  for (const it of (items || [])) {
+    const slot = Number(it.slot);
+    if (slot >= 1 && slot <= SLOT_COUNT) map[slot] = it;
+  }
+  return map;
+}
+
+async function renderGrid(manifest){
+  const gridWrap = document.getElementById('gridWrap');
+  gridWrap.innerHTML = "";
+  const slotted = bySlot(manifest.items);
+
+  for (let slot = 1; slot <= SLOT_COUNT; slot++) {
+    const it = slotted[slot];
+    const tile = document.createElement('div');
+
+    if (!it) {
+      tile.className = 'tile empty';
+      tile.textContent = "未設定";
+      gridWrap.appendChild(tile);
+      continue;
+    }
+
+    tile.className = 'tile';
+    const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
+    let mediaHtml;
+    if (it.type === 'video') {
+      mediaHtml = `<video src="${mediaUrl}" muted playsinline preload="metadata"></video><div class="play-badge"></div>`;
+    } else if (mediaUrl) {
+      mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
+    } else {
+      mediaHtml = `<span class="fallback-icon">🖼️</span>`;
+    }
+
+    tile.innerHTML = `
+      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : '写真')}</div>
+      <div class="tile-media">${mediaHtml}</div>
+      <div class="tile-label">${it.label || ''}</div>
+    `;
+    tile.addEventListener('click', () => openViewer(it));
+    gridWrap.appendChild(tile);
   }
 }
-async function openViewer(item) {
-  const url = await cachedUrl(item.media);
-  const stage = document.getElementById("stage"); stage.replaceChildren();
-  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
-  currentObjectUrl = url.startsWith("blob:") ? url : null;
-  const node = document.createElement(item.type === "video" ? "video" : "img"); node.src = url;
-  if (item.type === "video") { node.controls = true; node.autoplay = true; node.playsInline = true; }
-  else node.alt = item.label || "";
-  stage.append(node); document.getElementById("title").textContent = item.label || ""; document.getElementById("viewer").classList.add("active");
+
+async function openViewer(it){
+  document.getElementById('viewerTitle').textContent = it.label || '';
+  const stage = document.getElementById('viewerStage');
+  const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
+  if (mediaUrl && it.type === 'video') {
+    stage.innerHTML = `<video src="${mediaUrl}" controls autoplay playsinline></video>`;
+  } else if (mediaUrl && it.type === 'image') {
+    stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label || ''}">`;
+  } else {
+    stage.innerHTML = `<div>コンテンツを取得できませんでした</div>`;
+  }
+  document.getElementById('viewer-view').classList.add('active');
 }
-document.getElementById("back").addEventListener("click", () => { document.getElementById("viewer").classList.remove("active"); document.getElementById("stage").replaceChildren(); });
-function clock() { const d = new Date(), p = n => String(n).padStart(2,"0"); document.getElementById("clock").textContent = `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
-clock(); setInterval(clock, 30000); sync(); setInterval(sync, SYNC_INTERVAL_MS);
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  const stage = document.getElementById('viewerStage');
+  const video = stage.querySelector('video');
+  if (video) { video.pause(); }
+  document.getElementById('viewer-view').classList.remove('active');
+  stage.innerHTML = "";
+});
+
+function tick(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+tick();
+setInterval(tick, 1000 * 30);
+
+syncContent();
+setInterval(syncContent, SYNC_INTERVAL_MS);
 </script>
 </body>
 </html>
