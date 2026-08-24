@@ -1,37 +1,55 @@
-const APP_SHELL_CACHE = "signage-app-v2";
-const CONTENT_CACHE = "signage-content-v2";
-const APP_SHELL = ["./", "./index.html"];
+// ==========================================================
+// sw.js — キオスク表示用 Service Worker(v2)
+// 重要な修正点:
+//  ・manifest.json は「キャッシュ優先」ではなく「ネットワーク優先」に変更。
+//    以前の版はキャッシュ優先だったため、更新が反映されない不具合があった。
+//  ・実際の更新チェック・差分ダウンロードはメイン画面(index.html)側で行う。
+//    このService Workerはアプリ本体のオフライン表示だけを担当する。
+// ==========================================================
 
-self.addEventListener("install", event => {
-  event.waitUntil(caches.open(APP_SHELL_CACHE).then(cache => cache.addAll(APP_SHELL)));
+const APP_SHELL_CACHE = "app-shell-v2";
+
+const APP_SHELL_FILES = [
+  "./",
+  "./index.html"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_FILES))
+  );
   self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys
-    .filter(key => ![APP_SHELL_CACHE, CONTENT_CACHE].includes(key))
-    .map(key => caches.delete(key)))));
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((k) => k !== APP_SHELL_CACHE).map((k) => caches.delete(k))
+      )
+    )
+  );
   self.clients.claim();
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  const isManifest = url.origin === self.location.origin && url.pathname.endsWith("/manifest.json");
-  const isMedia = url.pathname.includes("/media/");
+  const isManifest = url.pathname.endsWith("manifest.json");
 
-  // Critical: manifest must be fetched from the network first. The prior
-  // worker returned its cached manifest forever, which prevented updates.
   if (isManifest) {
-    event.respondWith(fetch(event.request, { cache:"no-store" })
-      .then(response => { caches.open(CONTENT_CACHE).then(cache => cache.put(event.request, response.clone())); return response; })
-      .catch(() => caches.match(event.request)));
+    // manifest.json は常にネットワークを優先(キャッシュしない)。
+    event.respondWith(fetch(event.request).catch(() => new Response(null, { status: 503 })));
     return;
   }
-  if (isMedia) {
-    event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
-    return;
-  }
-  event.respondWith(fetch(event.request)
-    .then(response => { const copy = response.clone(); caches.open(APP_SHELL_CACHE).then(cache => cache.put(event.request, copy)); return response; })
-    .catch(() => caches.match(event.request)));
+
+  // アプリ本体(HTML/CSS/JS):ネット優先、失敗したらキャッシュ
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        const resClone = res.clone();
+        caches.open(APP_SHELL_CACHE).then((cache) => cache.put(event.request, resClone));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
+  );
 });
