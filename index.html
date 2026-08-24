@@ -171,7 +171,11 @@ async function setCachedVersion(cache, version) {
 async function fetchManifest() {
   const cache = await caches.open(CONTENT_CACHE);
   try {
-    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
+    // GitHub PagesのCDN(Fastly)側キャッシュを確実に回避するため、
+    // 毎回変わるクエリパラメータ(タイムスタンプ)を付与する。
+    // これが無いと、cache:"no-store" を指定してもCDN側の古い応答が
+    // 返り続け、更新が反映されないことがある。
+    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("network response not ok");
     return { manifest: await res.clone().json(), fromNetwork: true };
   } catch (e) {
