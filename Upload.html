@@ -29,8 +29,8 @@ submitBtn.addEventListener("click", async () => {
   submitBtn.disabled = true; setStatus("アップロード中です。画面を閉じずにお待ちください…", "");
   try {
     const res = await fetch(WORKER_URL, { method: "POST", headers: {
-      "Content-Type": file.type || "application/octet-stream", "X-Upload-Password": password,
-      "X-Label": label, "X-Media-Type": type, "X-File-Name": file.name,
+      "Content-Type": file.type || "application/octet-stream", "X-Upload-Password": encodeURIComponent(password),
+      "X-Label": encodeURIComponent(label), "X-Media-Type": type, "X-File-Name": encodeURIComponent(file.name),
     }, body: file });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "アップロードに失敗しました");
