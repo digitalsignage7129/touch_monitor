@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-24T09:22:41.340Z",
+  "version": "2026-08-25T01:42:45.429Z",
   "items": [
     {
       "id": "item_1787563359386",
@@ -9,6 +9,15 @@
       "label": "日本国土開発PV",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787563359386.mp4",
       "updated_at": "2026-08-24T09:22:41.340Z"
+    },
+    {
+      "id": "item_1787622164512",
+      "slot": 2,
+      "type": "pdf",
+      "tag": "PDF",
+      "label": "日本国土開発って？",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787622164512.pdf",
+      "updated_at": "2026-08-25T01:42:45.429Z"
     }
   ]
 }
