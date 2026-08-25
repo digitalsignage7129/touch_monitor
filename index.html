@@ -294,6 +294,27 @@ function bySlot(items){
 // 動画の1フレームを静止画(dataURL)としてキャプチャする。
 // 動画要素をそのままサムネイルにすると再生され続けてしまうため、
 // 1枚のPNGに変換してから <img> として表示する。
+// フレームがほぼ真っ黒かどうかを判定する(暗すぎる場合は撮り直す)
+function isFrameTooDark(ctx, width, height){
+  try {
+    const { data } = ctx.getImageData(0, 0, width, height);
+    let total = 0;
+    const sampleStep = 40 * 4; // 間引いてサンプリングし、処理負荷を抑える
+    let count = 0;
+    for (let i = 0; i < data.length; i += sampleStep) {
+      total += (data[i] + data[i + 1] + data[i + 2]) / 3;
+      count++;
+    }
+    const avgBrightness = count ? total / count : 0;
+    return avgBrightness < 12; // ほぼ黒一色とみなす閾値
+  } catch (e) {
+    return false; // 判定できない場合は「黒くない」扱いにして先へ進める
+  }
+}
+
+// 動画から静止画を1枚キャプチャする。冒頭が暗転していて真っ黒なだけの
+// フレームを掴んでしまうことがあるため、複数の時点を順に試し、
+// 明るいフレームが見つかった時点で確定する。
 function captureVideoFrame(url){
   return new Promise((resolve) => {
     const v = document.createElement('video');
@@ -303,11 +324,32 @@ function captureVideoFrame(url){
     v.preload = 'auto';
     v.crossOrigin = 'anonymous';
     let done = false;
+    let attemptIndex = 0;
+    // 冒頭が暗転していることが多いため、複数の候補時刻を順に試す
     const finish = (result) => { if (!done) { done = true; resolve(result); } };
+
+    const seekOffsets = (duration) => {
+      const d = duration && isFinite(duration) && duration > 0 ? duration : 4;
+      return [0.3, Math.min(1.5, d * 0.15), Math.min(3, d * 0.3), Math.min(5, d * 0.5)];
+    };
+
+    let offsets = null;
+    let bestResult = null; // 明るい候補が見つからなかった場合の保険用
+
+    const tryNextOffset = () => {
+      if (!offsets || attemptIndex >= offsets.length) {
+        finish(bestResult); // 全部暗くても、最後に撮れたものを一応使う
+        return;
+      }
+      try { v.currentTime = offsets[attemptIndex]; }
+      catch (e) { finish(bestResult); }
+    };
+
     v.addEventListener('loadeddata', () => {
-      try { v.currentTime = Math.min(0.2, (v.duration || 1) / 4); }
-      catch (e) { finish(null); }
+      offsets = seekOffsets(v.duration);
+      tryNextOffset();
     });
+
     v.addEventListener('seeked', () => {
       try {
         const canvas = document.createElement('canvas');
@@ -315,20 +357,40 @@ function captureVideoFrame(url){
         canvas.height = v.videoHeight || 180;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-        finish(canvas.toDataURL('image/jpeg', 0.8));
-      } catch (e) { finish(null); }
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        bestResult = dataUrl;
+
+        if (!isFrameTooDark(ctx, canvas.width, canvas.height)) {
+          finish(dataUrl); // 明るいフレームが見つかったので確定
+          return;
+        }
+        attemptIndex++;
+        tryNextOffset(); // 暗すぎたので次の候補時刻を試す
+      } catch (e) { finish(bestResult); }
     });
+
     v.addEventListener('error', () => finish(null));
-    setTimeout(() => finish(null), 6000); // 念のためのタイムアウト
+    setTimeout(() => finish(bestResult), 8000); // 念のためのタイムアウト
     v.load();
   });
 }
 
 // PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)
+// PDFの実データを取得する(URLをそのままpdf.jsに渡すと、ホスティング先の
+// 範囲リクエスト対応状況によって読み込みに失敗することがあるため、
+// 一度fetchで丸ごと取得してからバイト列として渡す、確実な方式にする)
+async function fetchPdfBytes(url){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('PDFの取得に失敗しました');
+  return new Uint8Array(await res.arrayBuffer());
+}
+
 async function renderPdfThumbnail(url){
   if (!window.pdfjsLib) return null;
+  let pdf = null;
   try {
-    const pdf = await pdfjsLib.getDocument(url).promise;
+    const bytes = await fetchPdfBytes(url);
+    pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 0.6 });
     const canvas = document.createElement('canvas');
@@ -341,7 +403,33 @@ async function renderPdfThumbnail(url){
     return canvas.toDataURL('image/jpeg', 0.85);
   } catch (e) {
     return null;
+  } finally {
+    if (pdf) pdf.destroy(); // ワーカーリソースを解放し、次のPDF処理に影響しないようにする
   }
+}
+
+// PDFサムネイル生成の直列キュー(同時に複数のpdf.jsワーカーが
+// 立ち上がって競合するのを防ぐため、1件ずつ順番に処理する)
+let pdfThumbnailQueue = Promise.resolve();
+function queuePdfThumbnail(url, tile){
+  pdfThumbnailQueue = pdfThumbnailQueue
+    .then(() => renderPdfThumbnail(url))
+    .then((dataUrl) => {
+      if (!dataUrl) {
+        console.warn('PDFサムネイルの生成に失敗しました:', url);
+        return;
+      }
+      const mediaDiv = tile.querySelector('.tile-media');
+      if (mediaDiv) {
+        mediaDiv.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.objectFit = 'contain';
+        img.style.background = '#fff';
+        mediaDiv.appendChild(img);
+      }
+    })
+    .catch((e) => console.warn('PDFサムネイル処理エラー:', e));
 }
 
 // PDFの全ページを縦スクロールで表示する(ブラウザ内蔵PDFビューアに
@@ -353,8 +441,10 @@ async function renderPdfInto(container, url){
     container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを表示できませんでした</div>`;
     return;
   }
+  let pdf = null;
   try {
-    const pdf = await pdfjsLib.getDocument(url).promise;
+    const bytes = await fetchPdfBytes(url);
+    pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
     container.innerHTML = '';
     container.style.overflowY = 'auto';
     container.style.background = '#3a3f45';
@@ -375,7 +465,10 @@ async function renderPdfInto(container, url){
       container.appendChild(canvas);
     }
   } catch (e) {
-    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFの表示に失敗しました</div>`;
+    console.error('PDF表示エラー:', e);
+    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFの表示に失敗しました(${e && e.message ? e.message : e})</div>`;
+  } finally {
+    if (pdf) pdf.destroy();
   }
 }
 
@@ -434,20 +527,11 @@ async function renderGrid(manifest){
     }
 
     // PDFはページ1をサムネイル画像として自動生成する(絵文字アイコンより
-    // 実際の中身が見えたほうが分かりやすいため)
+    // 実際の中身が見えたほうが分かりやすいため)。複数PDFを同時に処理すると
+    // pdf.js のワーカー生成が競合して失敗することがあるため、1件ずつ順番に
+    // 処理するキューに積む。
     if (it.type === 'pdf' && mediaUrl) {
-      renderPdfThumbnail(mediaUrl).then((dataUrl) => {
-        if (!dataUrl) return;
-        const mediaDiv = tile.querySelector('.tile-media');
-        if (mediaDiv) {
-          mediaDiv.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = dataUrl;
-          img.style.objectFit = 'contain';
-          img.style.background = '#fff';
-          mediaDiv.appendChild(img);
-        }
-      });
+      queuePdfThumbnail(mediaUrl, tile);
     }
   }
 
@@ -456,7 +540,7 @@ async function renderGrid(manifest){
   quizTile.className = 'tile quiz-tile';
   quizTile.innerHTML = `
     <div class="tile-tag">クイズ</div>
-    <div class="tile-media"><span class="fallback-icon">🧩</span></div>
+    <div class="tile-media"><img src="assets/quiz-icon.png" alt="クイズ" style="object-fit:contain;padding:14px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🧩'}))"></div>
     <div class="tile-label">日本国土開発クイズに挑戦!</div>
   `;
   quizTile.addEventListener('click', openQuiz);
