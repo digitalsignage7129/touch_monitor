@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-25T01:42:45.429Z",
+  "version": "2026-08-25T02:09:38.035Z",
   "items": [
     {
       "id": "item_1787563359386",
@@ -18,6 +18,15 @@
       "label": "日本国土開発って？",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787622164512.pdf",
       "updated_at": "2026-08-25T01:42:45.429Z"
+    },
+    {
+      "id": "item_1787623775942",
+      "slot": 3,
+      "type": "video",
+      "tag": "動画",
+      "label": "こんな工事もしています！",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1787623775942.mp4",
+      "updated_at": "2026-08-25T02:09:38.035Z"
     }
   ]
 }
