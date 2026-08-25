@@ -145,6 +145,13 @@
   .quiz-result-text{ font-size:26px; font-weight:900; margin-bottom:10px; }
   .quiz-result-sub{ font-size:17px; color:var(--text-dim); max-width:700px; line-height:1.7; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+</script>
 </head>
 <body>
 <div id="app">
@@ -313,7 +320,63 @@ function captureVideoFrame(url){
     });
     v.addEventListener('error', () => finish(null));
     setTimeout(() => finish(null), 6000); // 念のためのタイムアウト
+    v.load();
   });
+}
+
+// PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)
+async function renderPdfThumbnail(url){
+  if (!window.pdfjsLib) return null;
+  try {
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 0.6 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas.toDataURL('image/jpeg', 0.85);
+  } catch (e) {
+    return null;
+  }
+}
+
+// PDFの全ページを縦スクロールで表示する(ブラウザ内蔵PDFビューアに
+// 頼らず、pdf.jsで確実に描画する。多くのAndroid WebViewはiframeで
+// PDFをそのまま表示できないため)
+async function renderPdfInto(container, url){
+  container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを読み込んでいます…</div>`;
+  if (!window.pdfjsLib) {
+    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを表示できませんでした</div>`;
+    return;
+  }
+  try {
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    container.innerHTML = '';
+    container.style.overflowY = 'auto';
+    container.style.background = '#3a3f45';
+    container.style.padding = '16px';
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const page = await pdf.getPage(n);
+      const viewport = page.getViewport({ scale: 1.4 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 auto 16px';
+      canvas.style.background = '#fff';
+      canvas.style.maxWidth = '100%';
+      canvas.style.height = 'auto';
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      container.appendChild(canvas);
+    }
+  } catch (e) {
+    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFの表示に失敗しました</div>`;
+  }
 }
 
 async function renderGrid(manifest){
@@ -339,7 +402,7 @@ async function renderGrid(manifest){
     if (it.type === 'pdf') {
       mediaHtml = `<span class="fallback-icon">📄</span>`;
     } else if (it.type === 'video') {
-      mediaHtml = `<span class="fallback-icon">🎬</span><div class="play-badge"></div>`; // まず仮表示、後で静止画に差し替え
+      mediaHtml = `<span class="fallback-icon">🎬</span>`; // まず仮表示、後で静止画に差し替え
     } else if (mediaUrl) {
       mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
     } else {
@@ -360,9 +423,29 @@ async function renderGrid(manifest){
         if (!dataUrl) return;
         const mediaDiv = tile.querySelector('.tile-media');
         if (mediaDiv) {
+          // 差し替え前の絵文字アイコン・再生バッジを完全に削除してから、
+          // 静止画だけを表示する(アイコンが右端などに残らないようにする)
+          mediaDiv.innerHTML = '';
           const img = document.createElement('img');
           img.src = dataUrl;
-          mediaDiv.prepend(img);
+          mediaDiv.appendChild(img);
+        }
+      });
+    }
+
+    // PDFはページ1をサムネイル画像として自動生成する(絵文字アイコンより
+    // 実際の中身が見えたほうが分かりやすいため)
+    if (it.type === 'pdf' && mediaUrl) {
+      renderPdfThumbnail(mediaUrl).then((dataUrl) => {
+        if (!dataUrl) return;
+        const mediaDiv = tile.querySelector('.tile-media');
+        if (mediaDiv) {
+          mediaDiv.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.style.objectFit = 'contain';
+          img.style.background = '#fff';
+          mediaDiv.appendChild(img);
         }
       });
     }
@@ -387,15 +470,20 @@ async function openViewer(it){
   const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
 
   if (it.type === 'pdf' && mediaUrl) {
-    stage.innerHTML = `<iframe src="${mediaUrl}"></iframe>`;
+    stage.innerHTML = '';
+    stage.style.display = 'block'; // PDFはスクロール表示にするため、中央寄せflexを解除
+    await renderPdfInto(stage, mediaUrl);
   } else if (mediaUrl && it.type === 'video') {
+    stage.style.display = '';
     // controlsは付けない(標準UIの再生/一時停止アイコンが常時中央に
     // 表示され視認性を損なうため)。何も操作しなければloopで無限再生し、
     // 戻る操作は画面上部の戻るバーのみで行う。
     stage.innerHTML = `<video src="${mediaUrl}" autoplay loop playsinline></video>`;
   } else if (mediaUrl && it.type === 'image') {
+    stage.style.display = '';
     stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label || ''}">`;
   } else {
+    stage.style.display = '';
     stage.innerHTML = `<div>コンテンツを取得できませんでした</div>`;
   }
   document.getElementById('viewer-view').classList.add('active');
@@ -422,6 +510,26 @@ setInterval(tick, 1000 * 30);
 /* =========================================================
    日本国土開発クイズ(子供でも楽しめる、会社のイメージアップ向け全5問)
    ========================================================= */
+
+// 効果音(あらかじめ読み込んでおき、再生の遅延を減らす)
+const QUIZ_SOUNDS = {
+  start: new Audio('sounds/start.mp3'),         // 各問題が始まるとき
+  correct: new Audio('sounds/correct.mp3'),     // 正解のとき
+  wrong: new Audio('sounds/wrong.mp3'),         // 不正解のとき
+  perfect: new Audio('sounds/perfect.mp3'),     // 全問正解のとき
+  other_result: new Audio('sounds/other_result.mp3'), // 全問正解以外の結果画面
+};
+Object.values(QUIZ_SOUNDS).forEach((a) => { a.preload = 'auto'; });
+
+function playQuizSound(key){
+  const audio = QUIZ_SOUNDS[key];
+  if (!audio) return;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.play().catch(() => { /* 自動再生がブロックされた場合は無視 */ });
+  } catch (e) { /* noop */ }
+}
 
 const QUIZ_QUESTIONS = [
   {
@@ -509,6 +617,7 @@ function renderQuizQuestion(){
     return;
   }
   const q = QUIZ_QUESTIONS[quizIndex];
+  playQuizSound('start'); // 毎回、問題が始まるタイミングで再生
   body.innerHTML = `
     <div class="quiz-progress">問題 ${quizIndex + 1} / ${QUIZ_QUESTIONS.length}</div>
     <div class="quiz-question-emoji">${q.emoji}</div>
@@ -538,6 +647,7 @@ function selectQuizAnswer(selectedIndex){
     else if (i === selectedIndex) b.classList.add('wrong');
   });
   if (isCorrect) quizScore++;
+  playQuizSound(isCorrect ? 'correct' : 'wrong');
 
   const feedbackEl = document.getElementById('quizFeedback');
   feedbackEl.textContent = isCorrect ? "🎉 せいかい!" : "😢 ざんねん、ちがうよ";
@@ -559,8 +669,8 @@ function renderQuizResult(){
   const total = QUIZ_QUESTIONS.length;
   let emoji = "🌱";
   let msg = "また挑戦してね!";
-  if (quizScore === total) { emoji = "🏆"; msg = "パーフェクト!日本国土開発博士だね!"; }
-  else if (quizScore >= Math.ceil(total * 0.6)) { emoji = "🎉"; msg = "よくできました!"; }
+  if (quizScore === total) { emoji = "🏆"; msg = "パーフェクト!日本国土開発博士だね!"; playQuizSound('perfect'); }
+  else { playQuizSound('other_result'); if (quizScore >= Math.ceil(total * 0.6)) { emoji = "🎉"; msg = "よくできました!"; } }
 
   body.innerHTML = `
     <div class="quiz-result-emoji">${emoji}</div>
