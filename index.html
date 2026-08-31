@@ -95,7 +95,6 @@
     color:var(--text-dim); font-size:20px; text-align:center; background:#000;
   }
   .viewer-stage img, .viewer-stage video{ max-width:100%; max-height:100%; }
-  .viewer-stage iframe{ width:100%; height:100%; border:none; background:#fff; }
 
   .viewer-topbar{
     position:absolute; top:0; left:0; right:0; z-index:50;
@@ -233,7 +232,7 @@
   </div>
 
   <div id="screensaver-view">
-    <video id="screensaverVideo" src="assets/screensaver.mp4" autoplay loop muted playsinline></video>
+    <video id="screensaverVideo" muted playsinline loop></video>
     <div class="screensaver-overlay">
       <div class="screensaver-text">
         PLEASE TOUCH SCREEN<br>
@@ -248,12 +247,15 @@
 /* =========================================================
    5枠(アップロード可能) + 1枠固定クイズ の計6枠表示
    ・manifest.json 各itemは slot(1〜5)を持つ
+   ・manifest.json の screensaver フィールドにスクリーンセーバー動画URLを保持
    ・type: image / video / pdf に対応
    ・動画サムネイルは再生させず、静止画キャプチャに変換して表示
+   ・PDFは範囲リクエスト(Range)対応でpdf.jsに直接読み込ませ、
+     全体ダウンロードを待たずに表示を開始する
    ========================================================= */
 
 const MANIFEST_URL = "manifest.json";
-const CONTENT_CACHE = "signage-content-v3";
+const CONTENT_CACHE = "signage-content-v4";
 const VERSION_KEY = new Request("https://internal.local/content-version-marker");
 const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
 const SLOT_COUNT = 5; // アップロード枠は5つ(残り1枠は固定クイズ)
@@ -273,7 +275,6 @@ async function setCachedVersion(cache, version) {
 async function fetchManifest() {
   const cache = await caches.open(CONTENT_CACHE);
   try {
-    // GitHub PagesのCDNキャッシュを確実に回避するため、毎回変わるパラメータを付与
     const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("network response not ok");
     return { manifest: await res.clone().json(), fromNetwork: true };
@@ -295,35 +296,44 @@ async function syncContent() {
 
   if (!fromNetwork) {
     renderGrid(manifest);
+    setupScreensaver(manifest);
     setSyncBadge("オフライン(前回データ表示中)");
     return;
   }
 
   if (localVersion === manifest.version) {
     renderGrid(manifest);
+    setupScreensaver(manifest);
     setSyncBadge("最新の状態です");
     return;
   }
 
   setSyncBadge("更新をダウンロード中…");
   try {
-    for (const item of (manifest.items || [])) {
-      if (!item.media) continue;
-      const already = await cache.match(item.media);
+    const mediaUrls = (manifest.items || []).map((it) => it.media).filter(Boolean);
+    if (manifest.screensaver) mediaUrls.push(manifest.screensaver);
+
+    for (const mediaPath of mediaUrls) {
+      const already = await cache.match(mediaPath);
       if (already) continue;
       try {
-        const fileRes = await fetch(item.media);
-        if (fileRes.ok) await cache.put(item.media, fileRes.clone());
+        const fileRes = await fetch(mediaPath);
+        if (fileRes.ok) await cache.put(mediaPath, fileRes.clone());
       } catch (e) { /* 個別ファイル取得失敗は無視し、次回再試行に任せる */ }
     }
     await cache.put(MANIFEST_URL, new Response(JSON.stringify(manifest)));
     await setCachedVersion(cache, manifest.version);
     renderGrid(manifest);
+    setupScreensaver(manifest);
     setSyncBadge("更新完了");
   } catch (e) {
     setSyncBadge("更新に失敗(次回再試行)");
     const cachedManifest = await cache.match(MANIFEST_URL);
-    if (cachedManifest) renderGrid(await cachedManifest.json());
+    if (cachedManifest) {
+      const m = await cachedManifest.json();
+      renderGrid(m);
+      setupScreensaver(m);
+    }
   }
 }
 
@@ -337,6 +347,17 @@ async function resolveMediaUrl(path){
   return path;
 }
 
+// スクリーンセーバー動画をmanifest.jsonの内容に合わせて設定する
+async function setupScreensaver(manifest){
+  const video = document.getElementById('screensaverVideo');
+  if (!manifest.screensaver) return;
+  const url = await resolveMediaUrl(manifest.screensaver).catch(() => manifest.screensaver);
+  if (url && video.dataset.loadedSrc !== manifest.screensaver) {
+    video.src = url;
+    video.dataset.loadedSrc = manifest.screensaver; // 同じ動画の再読み込みを避ける
+  }
+}
+
 function bySlot(items){
   const map = {};
   for (const it of (items || [])) {
@@ -346,30 +367,23 @@ function bySlot(items){
   return map;
 }
 
-// 動画の1フレームを静止画(dataURL)としてキャプチャする。
-// 動画要素をそのままサムネイルにすると再生され続けてしまうため、
-// 1枚のPNGに変換してから <img> として表示する。
-// フレームがほぼ真っ黒かどうかを判定する(暗すぎる場合は撮り直す)
 function isFrameTooDark(ctx, width, height){
   try {
     const { data } = ctx.getImageData(0, 0, width, height);
     let total = 0;
-    const sampleStep = 40 * 4; // 間引いてサンプリングし、処理負荷を抑える
+    const sampleStep = 40 * 4;
     let count = 0;
     for (let i = 0; i < data.length; i += sampleStep) {
       total += (data[i] + data[i + 1] + data[i + 2]) / 3;
       count++;
     }
     const avgBrightness = count ? total / count : 0;
-    return avgBrightness < 12; // ほぼ黒一色とみなす閾値
+    return avgBrightness < 12;
   } catch (e) {
-    return false; // 判定できない場合は「黒くない」扱いにして先へ進める
+    return false;
   }
 }
 
-// 動画から静止画を1枚キャプチャする。冒頭が暗転していて真っ黒なだけの
-// フレームを掴んでしまうことがあるため、複数の時点を順に試し、
-// 明るいフレームが見つかった時点で確定する。
 function captureVideoFrame(url){
   return new Promise((resolve) => {
     const v = document.createElement('video');
@@ -380,7 +394,6 @@ function captureVideoFrame(url){
     v.crossOrigin = 'anonymous';
     let done = false;
     let attemptIndex = 0;
-    // 冒頭が暗転していることが多いため、複数の候補時刻を順に試す
     const finish = (result) => { if (!done) { done = true; resolve(result); } };
 
     const seekOffsets = (duration) => {
@@ -389,11 +402,11 @@ function captureVideoFrame(url){
     };
 
     let offsets = null;
-    let bestResult = null; // 明るい候補が見つからなかった場合の保険用
+    let bestResult = null;
 
     const tryNextOffset = () => {
       if (!offsets || attemptIndex >= offsets.length) {
-        finish(bestResult); // 全部暗くても、最後に撮れたものを一応使う
+        finish(bestResult);
         return;
       }
       try { v.currentTime = offsets[attemptIndex]; }
@@ -416,36 +429,28 @@ function captureVideoFrame(url){
         bestResult = dataUrl;
 
         if (!isFrameTooDark(ctx, canvas.width, canvas.height)) {
-          finish(dataUrl); // 明るいフレームが見つかったので確定
+          finish(dataUrl);
           return;
         }
         attemptIndex++;
-        tryNextOffset(); // 暗すぎたので次の候補時刻を試す
+        tryNextOffset();
       } catch (e) { finish(bestResult); }
     });
 
     v.addEventListener('error', () => finish(null));
-    setTimeout(() => finish(bestResult), 8000); // 念のためのタイムアウト
+    setTimeout(() => finish(bestResult), 8000);
     v.load();
   });
 }
 
-// PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)
-// PDFの実データを取得する(URLをそのままpdf.jsに渡すと、ホスティング先の
-// 範囲リクエスト対応状況によって読み込みに失敗することがあるため、
-// 一度fetchで丸ごと取得してからバイト列として渡す、確実な方式にする)
-async function fetchPdfBytes(url){
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('PDFの取得に失敗しました');
-  return new Uint8Array(await res.arrayBuffer());
-}
-
+// PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)。
+// URLを直接pdf.jsへ渡し、範囲リクエスト(Range)でページ1に必要な分だけ
+// 取得させる(全体ダウンロードを待たない)。
 async function renderPdfThumbnail(url){
   if (!window.pdfjsLib) return null;
   let pdf = null;
   try {
-    const bytes = await fetchPdfBytes(url);
-    pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    pdf = await pdfjsLib.getDocument({ url }).promise;
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 0.6 });
     const canvas = document.createElement('canvas');
@@ -459,12 +464,10 @@ async function renderPdfThumbnail(url){
   } catch (e) {
     return null;
   } finally {
-    if (pdf) pdf.destroy(); // ワーカーリソースを解放し、次のPDF処理に影響しないようにする
+    if (pdf) pdf.destroy();
   }
 }
 
-// PDFサムネイル生成の直列キュー(同時に複数のpdf.jsワーカーが
-// 立ち上がって競合するのを防ぐため、1件ずつ順番に処理する)
 let pdfThumbnailQueue = Promise.resolve();
 function queuePdfThumbnail(url, tile){
   pdfThumbnailQueue = pdfThumbnailQueue
@@ -487,30 +490,34 @@ function queuePdfThumbnail(url, tile){
     .catch((e) => console.warn('PDFサムネイル処理エラー:', e));
 }
 
-// PDFの全ページを縦スクロールで表示する(ブラウザ内蔵PDFビューアに
-// 頼らず、pdf.jsで確実に描画する。多くのAndroid WebViewはiframeで
-// PDFをそのまま表示できないため)。
-// 体感速度のため、1ページ目が描画でき次第すぐ表示し、残りのページは
-// 裏側で順番に描画して追加していく(全ページ完了を待たない)。
-// また、画面幅に対して過剰に高解像度で描画すると遅くなるため、
-// 実際に必要なサイズに合わせて解像度を計算する。
+// PDFの全ページを縦スクロールで表示する。URLを直接pdf.jsへ渡し、
+// 範囲リクエスト(Range)対応であれば必要なページ分だけを取得しながら
+// 順次表示する(全体ダウンロードの完了を待たない)。
+// R2側のCORS設定でRangeヘッダーが許可されていない場合は、pdf.js が
+// 自動的に「全体を1回で取得する」方式にフォールバックする。
 async function renderPdfInto(container, url){
-  container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを読み込んでいます…</div>`;
+  container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;" id="pdfLoadingMsg">PDFを読み込んでいます…</div>`;
   if (!window.pdfjsLib) {
     container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを表示できませんでした</div>`;
     return;
   }
   let pdf = null;
   try {
-    const bytes = await fetchPdfBytes(url);
-    pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    const loadingTask = pdfjsLib.getDocument({ url });
+    loadingTask.onProgress = (progress) => {
+      const msgEl = document.getElementById('pdfLoadingMsg');
+      if (msgEl && progress.total) {
+        const pct = Math.min(100, Math.round((progress.loaded / progress.total) * 100));
+        msgEl.textContent = `PDFを読み込んでいます…(${pct}%)`;
+      }
+    };
+    pdf = await loadingTask.promise;
 
     container.innerHTML = '';
     container.style.overflowY = 'auto';
     container.style.background = '#3a3f45';
     container.style.padding = '16px';
 
-    // 画面幅に合わせた解像度を計算する(高すぎる解像度は描画が遅くなる)
     const availableWidth = Math.max(320, container.clientWidth - 32);
     const firstPage = await pdf.getPage(1);
     const naturalViewport = firstPage.getViewport({ scale: 1 });
@@ -527,20 +534,15 @@ async function renderPdfInto(container, url){
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       const ctx = canvas.getContext('2d');
-      container.appendChild(canvas); // 先にDOMへ入れておき、描画完了次第見えるようにする
+      container.appendChild(canvas);
       await page.render({ canvasContext: ctx, viewport }).promise;
     };
 
-    // 1ページ目から順に描画してその都度DOMへ追加していく。
-    // canvasは描画完了前にappendChildしているため、1ページ目は
-    // 「読み込んでいます」の表示が消えた直後には画面に出始める。
     for (let n = 1; n <= pdf.numPages; n++) {
       const page = await pdf.getPage(n);
       await renderPage(page);
     }
 
-    // 複数ページある場合は、スクロールできることが伝わるよう
-    // 案内アイコンを一時的に表示する(スクロールし始めたら消える)
     if (pdf.numPages > 1) {
       showPdfScrollHint(container);
     }
@@ -552,9 +554,6 @@ async function renderPdfInto(container, url){
   }
 }
 
-// PDFが複数ページある場合、「下にスクロールできる」ことが伝わるよう
-// 矢印アイコン付きの案内を一時的に表示する。スクロールを始めたら、
-// または数秒経過したら自動的に消える。
 function showPdfScrollHint(scrollContainer){
   const viewerView = document.getElementById('viewer-view');
   const hint = document.createElement('div');
@@ -572,7 +571,7 @@ function showPdfScrollHint(scrollContainer){
   };
 
   scrollContainer.addEventListener('scroll', remove, { once: true, passive: true });
-  setTimeout(remove, 5000); // スクロールしなくても数秒後には自動で消す
+  setTimeout(remove, 5000);
 }
 
 async function renderGrid(manifest){
@@ -598,7 +597,7 @@ async function renderGrid(manifest){
     if (it.type === 'pdf') {
       mediaHtml = `<span class="fallback-icon">📄</span>`;
     } else if (it.type === 'video') {
-      mediaHtml = `<span class="fallback-icon">🎬</span>`; // まず仮表示、後で静止画に差し替え
+      mediaHtml = `<span class="fallback-icon">🎬</span>`;
     } else if (mediaUrl) {
       mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
     } else {
@@ -613,14 +612,11 @@ async function renderGrid(manifest){
     tile.addEventListener('click', () => openViewer(it));
     gridWrap.appendChild(tile);
 
-    // 動画は静止画キャプチャが取得でき次第、サムネイルを差し替える(再生はさせない)
     if (it.type === 'video' && mediaUrl) {
       captureVideoFrame(mediaUrl).then((dataUrl) => {
         if (!dataUrl) return;
         const mediaDiv = tile.querySelector('.tile-media');
         if (mediaDiv) {
-          // 差し替え前の絵文字アイコン・再生バッジを完全に削除してから、
-          // 静止画だけを表示する(アイコンが右端などに残らないようにする)
           mediaDiv.innerHTML = '';
           const img = document.createElement('img');
           img.src = dataUrl;
@@ -629,16 +625,13 @@ async function renderGrid(manifest){
       });
     }
 
-    // PDFはページ1をサムネイル画像として自動生成する(絵文字アイコンより
-    // 実際の中身が見えたほうが分かりやすいため)。複数PDFを同時に処理すると
-    // pdf.js のワーカー生成が競合して失敗することがあるため、1件ずつ順番に
-    // 処理するキューに積む。
-    if (it.type === 'pdf' && mediaUrl) {
-      queuePdfThumbnail(mediaUrl, tile);
+    if (it.type === 'pdf') {
+      // サムネイルは常に元のURL(R2)を範囲リクエストで読ませる
+      // (ローカルキャッシュのBlob URLだと範囲リクエストが効かないため)
+      queuePdfThumbnail(it.media, tile);
     }
   }
 
-  // 6枠目:固定クイズタイル
   const quizTile = document.createElement('div');
   quizTile.className = 'tile quiz-tile';
   quizTile.innerHTML = `
@@ -651,27 +644,27 @@ async function renderGrid(manifest){
 }
 
 async function openViewer(it){
-  document.getElementById('grid-view').style.display = 'none'; // 一覧を確実に非表示にする
+  document.getElementById('grid-view').style.display = 'none';
   document.getElementById('viewerTitle').textContent = it.label || '';
   const stage = document.getElementById('viewerStage');
-  const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
 
-  if (it.type === 'pdf' && mediaUrl) {
+  if (it.type === 'pdf') {
     stage.innerHTML = '';
-    stage.style.display = 'block'; // PDFはスクロール表示にするため、中央寄せflexを解除
-    await renderPdfInto(stage, mediaUrl);
-  } else if (mediaUrl && it.type === 'video') {
-    stage.style.display = '';
-    // controlsは付けない(標準UIの再生/一時停止アイコンが常時中央に
-    // 表示され視認性を損なうため)。何も操作しなければloopで無限再生し、
-    // 戻る操作は画面上部の戻るバーのみで行う。
-    stage.innerHTML = `<video src="${mediaUrl}" autoplay loop playsinline></video>`;
-  } else if (mediaUrl && it.type === 'image') {
-    stage.style.display = '';
-    stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label || ''}">`;
+    stage.style.display = 'block';
+    // PDF表示は常に元のURL(R2)を範囲リクエストで読ませる
+    await renderPdfInto(stage, it.media);
   } else {
-    stage.style.display = '';
-    stage.innerHTML = `<div>コンテンツを取得できませんでした</div>`;
+    const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
+    if (mediaUrl && it.type === 'video') {
+      stage.style.display = '';
+      stage.innerHTML = `<video src="${mediaUrl}" autoplay loop playsinline></video>`;
+    } else if (mediaUrl && it.type === 'image') {
+      stage.style.display = '';
+      stage.innerHTML = `<img src="${mediaUrl}" alt="${it.label || ''}">`;
+    } else {
+      stage.style.display = '';
+      stage.innerHTML = `<div>コンテンツを取得できませんでした</div>`;
+    }
   }
   document.getElementById('viewer-view').classList.add('active');
 }
@@ -682,7 +675,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
   if (video) { video.pause(); }
   document.getElementById('viewer-view').classList.remove('active');
   stage.innerHTML = "";
-  stage.style.overflowY = ''; // PDF表示用に変えたスクロール設定を元に戻す
+  stage.style.overflowY = '';
   const leftoverHint = document.getElementById('pdfScrollHint');
   if (leftoverHint) leftoverHint.remove();
   document.getElementById('grid-view').style.display = 'flex';
@@ -698,16 +691,15 @@ tick();
 setInterval(tick, 1000 * 30);
 
 /* =========================================================
-   日本国土開発クイズ(子供でも楽しめる、会社のイメージアップ向け全5問)
+   日本国土開発クイズ
    ========================================================= */
 
-// 効果音(あらかじめ読み込んでおき、再生の遅延を減らす)
 const QUIZ_SOUNDS = {
-  start: new Audio('sounds/start.mp3'),         // 各問題が始まるとき
-  correct: new Audio('sounds/correct.mp3'),     // 正解のとき
-  wrong: new Audio('sounds/wrong.mp3'),         // 不正解のとき
-  perfect: new Audio('sounds/perfect.mp3'),     // 全問正解のとき
-  other_result: new Audio('sounds/other_result.mp3'), // 全問正解以外の結果画面
+  start: new Audio('sounds/start.mp3'),
+  correct: new Audio('sounds/correct.mp3'),
+  wrong: new Audio('sounds/wrong.mp3'),
+  perfect: new Audio('sounds/perfect.mp3'),
+  other_result: new Audio('sounds/other_result.mp3'),
 };
 Object.values(QUIZ_SOUNDS).forEach((a) => { a.preload = 'auto'; });
 
@@ -717,8 +709,8 @@ function playQuizSound(key){
   try {
     audio.pause();
     audio.currentTime = 0;
-    audio.play().catch(() => { /* 自動再生がブロックされた場合は無視 */ });
-  } catch (e) { /* noop */ }
+    audio.play().catch(() => {});
+  } catch (e) {}
 }
 
 const QUIZ_QUESTIONS = [
@@ -807,7 +799,7 @@ function renderQuizQuestion(){
     return;
   }
   const q = QUIZ_QUESTIONS[quizIndex];
-  playQuizSound('start'); // 毎回、問題が始まるタイミングで再生
+  playQuizSound('start');
   body.innerHTML = `
     <div class="quiz-progress">問題 ${quizIndex + 1} / ${QUIZ_QUESTIONS.length}</div>
     <div class="quiz-question-emoji">${q.emoji}</div>
@@ -877,11 +869,10 @@ document.getElementById('quizBackBtn').addEventListener('click', closeQuiz);
    スクリーンセーバー(10分間操作がなければ表示)
    ========================================================= */
 
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10分
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 let idleTimer = null;
 
 function showScreensaver(){
-  // 途中まで開いていた動画・PDF・クイズがあれば一覧表示に戻しておく
   const video = document.querySelector('#viewerStage video');
   if (video) video.pause();
   document.getElementById('viewer-view').classList.remove('active');
@@ -893,8 +884,10 @@ function showScreensaver(){
 
   document.getElementById('screensaver-view').classList.add('active');
   const ssVideo = document.getElementById('screensaverVideo');
-  ssVideo.currentTime = 0;
-  ssVideo.play().catch(() => { /* 自動再生できなくても静止画のまま表示を継続 */ });
+  if (ssVideo.src) {
+    ssVideo.currentTime = 0;
+    ssVideo.play().catch(() => {});
+  }
 }
 
 function hideScreensaver(){
@@ -907,12 +900,11 @@ function resetIdleTimer(){
   idleTimer = setTimeout(showScreensaver, IDLE_TIMEOUT_MS);
 }
 
-// タッチ・クリック・キー操作などをすべて「操作あり」とみなしてタイマーをリセットする
 ['touchstart', 'mousedown', 'click', 'keydown'].forEach((evt) => {
   document.addEventListener(evt, () => {
     const wasShowingScreensaver = document.getElementById('screensaver-view').classList.contains('active');
     if (wasShowingScreensaver) {
-      hideScreensaver(); // スクリーンセーバー中のタップは「解除」だけを行う
+      hideScreensaver();
     }
     resetIdleTimer();
   }, { passive: true });
