@@ -46,8 +46,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        const resClone = res.clone();
-        caches.open(APP_SHELL_CACHE).then((cache) => cache.put(event.request, resClone));
+        // 範囲リクエスト(PDFの部分取得など)への応答は
+        // ステータス206(部分的な内容)になり、Cache APIでは
+        // 保存できない仕様のため、200(完全な応答)のときだけ保存する。
+        if (res.status === 200) {
+          const resClone = res.clone();
+          caches.open(APP_SHELL_CACHE).then((cache) => cache.put(event.request, resClone));
+        }
         return res;
       })
       .catch(() => caches.match(event.request))
