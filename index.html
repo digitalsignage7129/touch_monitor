@@ -78,6 +78,12 @@
     content:""; width:0; height:0; margin-left:3px;
     border-left:11px solid var(--text); border-top:7px solid transparent; border-bottom:7px solid transparent;
   }
+  .page-badge{
+    position:absolute; top:12px; right:12px; z-index:2;
+    font-size:11px; font-weight:700;
+    background:rgba(0,0,0,0.6); color:var(--text);
+    padding:3px 9px; border-radius:999px;
+  }
 
   footer{
     flex-shrink:0; padding: 10px 40px; display:flex; justify-content:space-between; align-items:center;
@@ -86,7 +92,7 @@
   .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--safety); margin-right:8px; box-shadow: 0 0 0 4px rgba(255,107,53,0.18); }
   #syncBadge{ font-size:11px; padding:2px 8px; border-radius:999px; background:var(--panel-hi); margin-left:10px; }
 
-  /* ---- メディアビューア(画像・動画・PDF) ---- */
+  /* ---- メディアビューア(画像・動画) ---- */
   #viewer-view{ display:none; position:absolute; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000; z-index:100; }
   #viewer-view.active{ display:block; }
   .viewer-stage{
@@ -189,13 +195,6 @@
   .quiz-result-text{ font-size:26px; font-weight:900; margin-bottom:10px; }
   .quiz-result-sub{ font-size:17px; color:var(--text-dim); max-width:700px; line-height:1.7; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  }
-</script>
 </head>
 <body>
 <div id="app">
@@ -248,10 +247,8 @@
    5枠(アップロード可能) + 1枠固定クイズ の計6枠表示
    ・manifest.json 各itemは slot(1〜5)を持つ
    ・manifest.json の screensaver フィールドにスクリーンセーバー動画URLを保持
-   ・type: image / video / pdf に対応
+   ・type: image / video / gallery(複数画像) に対応
    ・動画サムネイルは再生させず、静止画キャプチャに変換して表示
-   ・PDFは範囲リクエスト(Range)対応でpdf.jsに直接読み込ませ、
-     全体ダウンロードを待たずに表示を開始する
    ========================================================= */
 
 const MANIFEST_URL = "manifest.json";
@@ -310,7 +307,13 @@ async function syncContent() {
 
   setSyncBadge("更新をダウンロード中…");
   try {
-    const mediaUrls = (manifest.items || []).map((it) => it.media).filter(Boolean);
+    // gallery型は media が配列(複数画像)なので、平坦化してURL一覧にする
+    const mediaUrls = [];
+    for (const it of (manifest.items || [])) {
+      if (!it.media) continue;
+      if (Array.isArray(it.media)) mediaUrls.push(...it.media);
+      else mediaUrls.push(it.media);
+    }
     if (manifest.screensaver) mediaUrls.push(manifest.screensaver);
 
     for (const mediaPath of mediaUrls) {
@@ -443,146 +446,14 @@ function captureVideoFrame(url){
   });
 }
 
-// すでにローカルへ同期済み(キャッシュ済み)のPDFであれば、そのデータを
-// そのまま使う(ネット速度に一切左右されず瞬時に開ける)。
-// まだ同期が済んでいない(アップロード直後など)場合のみ、
-// ネット経由の範囲リクエストにフォールバックする。
-async function getPdfSource(path){
-  try {
-    const cache = await caches.open(CONTENT_CACHE);
-    const cached = await cache.match(path);
-    if (cached) {
-      const buf = await cached.arrayBuffer();
-      return { data: new Uint8Array(buf) }; // ローカルデータなので即座に開ける
-    }
-  } catch (e) { /* キャッシュ参照に失敗した場合はネット経由にフォールバック */ }
-  return { url: path }; // 未同期の場合のみ、範囲リクエストで少しずつ取得
-}
-
-// PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)。
-async function renderPdfThumbnail(url){
-  if (!window.pdfjsLib) return null;
-  let pdf = null;
-  try {
-    const src = await getPdfSource(url);
-    pdf = await pdfjsLib.getDocument(src).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 0.6 });
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    return canvas.toDataURL('image/jpeg', 0.85);
-  } catch (e) {
-    return null;
-  } finally {
-    if (pdf) pdf.destroy();
-  }
-}
-
-let pdfThumbnailQueue = Promise.resolve();
-function queuePdfThumbnail(url, tile){
-  pdfThumbnailQueue = pdfThumbnailQueue
-    .then(() => renderPdfThumbnail(url))
-    .then((dataUrl) => {
-      if (!dataUrl) {
-        console.warn('PDFサムネイルの生成に失敗しました:', url);
-        return;
-      }
-      const mediaDiv = tile.querySelector('.tile-media');
-      if (mediaDiv) {
-        mediaDiv.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.objectFit = 'contain';
-        img.style.background = '#fff';
-        mediaDiv.appendChild(img);
-      }
-    })
-    .catch((e) => console.warn('PDFサムネイル処理エラー:', e));
-}
-
-// PDFの全ページを縦スクロールで表示する。すでにローカルへ同期済みなら
-// そのデータを直接使い(ネット速度に左右されず瞬時に表示)、
-// 未同期の場合のみ範囲リクエスト(Range)で少しずつ取得しながら表示する。
-async function renderPdfInto(container, url){
-  container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;" id="pdfLoadingMsg">PDFを読み込んでいます…</div>`;
-  if (!window.pdfjsLib) {
-    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを表示できませんでした</div>`;
-    return;
-  }
-  let pdf = null;
-  const t0 = performance.now();
-  try {
-    const src = await getPdfSource(url);
-    console.log(`[PDF計測] データ取得完了: ${Math.round(performance.now() - t0)}ms (${'data' in src ? 'ローカルキャッシュ' : 'ネットワーク'})`);
-
-    const loadingTask = pdfjsLib.getDocument(src);
-    loadingTask.onProgress = (progress) => {
-      const msgEl = document.getElementById('pdfLoadingMsg');
-      if (msgEl && progress.total) {
-        const pct = Math.min(100, Math.round((progress.loaded / progress.total) * 100));
-        msgEl.textContent = `PDFを読み込んでいます…(${pct}%)`;
-      }
-    };
-    pdf = await loadingTask.promise;
-    console.log(`[PDF計測] PDF構造解析完了: ${Math.round(performance.now() - t0)}ms (総ページ数:${pdf.numPages})`);
-
-    container.innerHTML = '';
-    container.style.overflowY = 'auto';
-    container.style.background = '#3a3f45';
-    container.style.padding = '16px';
-
-    const availableWidth = Math.max(320, container.clientWidth - 32);
-    const firstPage = await pdf.getPage(1);
-    console.log(`[PDF計測] 1ページ目オブジェクト取得: ${Math.round(performance.now() - t0)}ms`);
-    const naturalViewport = firstPage.getViewport({ scale: 1 });
-    // 描画解像度の上限を下げ(2.0→1.2)、フォントのラスタライズ負荷を抑える
-    const fitScale = Math.min(1.2, Math.max(0.8, availableWidth / naturalViewport.width));
-
-    const renderPage = async (page, label) => {
-      const pageT0 = performance.now();
-      const viewport = page.getViewport({ scale: fitScale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.display = 'block';
-      canvas.style.margin = '0 auto 16px';
-      canvas.style.background = '#fff';
-      canvas.style.maxWidth = '100%';
-      canvas.style.height = 'auto';
-      const ctx = canvas.getContext('2d');
-      container.appendChild(canvas);
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      console.log(`[PDF計測] ${label}描画完了: ${Math.round(performance.now() - pageT0)}ms (累計 ${Math.round(performance.now() - t0)}ms)`);
-    };
-
-    await renderPage(firstPage, "1ページ目");
-
-    for (let n = 2; n <= pdf.numPages; n++) {
-      const page = await pdf.getPage(n);
-      await renderPage(page, `${n}ページ目`);
-    }
-
-    if (pdf.numPages > 1) {
-      showPdfScrollHint(container);
-    }
-  } catch (e) {
-    console.error('PDF表示エラー:', e);
-    container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFの表示に失敗しました(${e && e.message ? e.message : e})</div>`;
-  } finally {
-    if (pdf) pdf.destroy();
-  }
-}
-
-function showPdfScrollHint(scrollContainer){
+// 複数ページ(複数画像)ある場合、「下にスクロールできる」ことが伝わるよう
+// 矢印アイコン付きの案内を一時的に表示する。スクロールを始めたら、
+// または数秒経過したら自動的に消える。
+function showScrollHint(scrollContainer){
   const viewerView = document.getElementById('viewer-view');
   const hint = document.createElement('div');
   hint.className = 'scroll-hint';
-  hint.id = 'pdfScrollHint';
+  hint.id = 'contentScrollHint';
   hint.innerHTML = `<div class="arrow"></div><span>下にスクロールできます</span>`;
   viewerView.appendChild(hint);
 
@@ -596,6 +467,31 @@ function showPdfScrollHint(scrollContainer){
 
   scrollContainer.addEventListener('scroll', remove, { once: true, passive: true });
   setTimeout(remove, 5000);
+}
+
+// 画像アルバム(複数枚の画像)を縦スクロールで表示する。
+// 単純な<img>表示だけなので、非力な端末でも常に高速に表示できる。
+async function renderGalleryInto(container, mediaList){
+  const urls = Array.isArray(mediaList) ? mediaList : [mediaList];
+  container.style.overflowY = 'auto';
+  container.style.background = '#000';
+  container.style.padding = '16px';
+  container.innerHTML = '';
+
+  for (const path of urls) {
+    const url = await resolveMediaUrl(path).catch(() => path);
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.display = 'block';
+    img.style.margin = '0 auto 16px';
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    container.appendChild(img);
+  }
+
+  if (urls.length > 1) {
+    showScrollHint(container);
+  }
 }
 
 async function renderGrid(manifest){
@@ -615,12 +511,12 @@ async function renderGrid(manifest){
     }
 
     tile.className = 'tile';
-    const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
+    // gallery型は media が配列なので、サムネイルには1枚目を使う
+    const thumbSourcePath = Array.isArray(it.media) ? it.media[0] : it.media;
+    const mediaUrl = await resolveMediaUrl(thumbSourcePath).catch(() => thumbSourcePath);
 
     let mediaHtml;
-    if (it.type === 'pdf') {
-      mediaHtml = `<span class="fallback-icon">📄</span>`;
-    } else if (it.type === 'video') {
+    if (it.type === 'video') {
       mediaHtml = `<span class="fallback-icon">🎬</span>`;
     } else if (mediaUrl) {
       mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
@@ -628,8 +524,12 @@ async function renderGrid(manifest){
       mediaHtml = `<span class="fallback-icon">🖼️</span>`;
     }
 
+    const pageBadge = (it.type === 'gallery' && Array.isArray(it.media) && it.media.length > 1)
+      ? `<div class="page-badge">全${it.media.length}枚</div>` : '';
+
     tile.innerHTML = `
-      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : it.type === 'pdf' ? 'PDF' : '写真')}</div>
+      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : '写真')}</div>
+      ${pageBadge}
       <div class="tile-media">${mediaHtml}</div>
       <div class="tile-label">${it.label || ''}</div>
     `;
@@ -647,12 +547,6 @@ async function renderGrid(manifest){
           mediaDiv.appendChild(img);
         }
       });
-    }
-
-    if (it.type === 'pdf') {
-      // it.media(元のURL)を渡す。関数内部でローカルキャッシュの有無を
-      // 判定し、あればそちらを、なければ範囲リクエストを使う。
-      queuePdfThumbnail(it.media, tile);
     }
   }
 
@@ -672,12 +566,10 @@ async function openViewer(it){
   document.getElementById('viewerTitle').textContent = it.label || '';
   const stage = document.getElementById('viewerStage');
 
-  if (it.type === 'pdf') {
+  if (it.type === 'gallery') {
     stage.innerHTML = '';
     stage.style.display = 'block';
-    // it.media(元のURL)を渡す。関数内部でローカルキャッシュの有無を
-    // 判定し、あればそちらを、なければ範囲リクエストを使う。
-    await renderPdfInto(stage, it.media);
+    await renderGalleryInto(stage, it.media);
   } else {
     const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
     if (mediaUrl && it.type === 'video') {
@@ -701,7 +593,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
   document.getElementById('viewer-view').classList.remove('active');
   stage.innerHTML = "";
   stage.style.overflowY = '';
-  const leftoverHint = document.getElementById('pdfScrollHint');
+  const leftoverHint = document.getElementById('contentScrollHint');
   if (leftoverHint) leftoverHint.remove();
   document.getElementById('grid-view').style.display = 'flex';
 });
@@ -904,7 +796,7 @@ function showScreensaver(){
   document.getElementById('viewerStage').innerHTML = '';
   document.getElementById('quiz-view').classList.remove('active');
   document.getElementById('grid-view').style.display = 'flex';
-  const leftoverHint = document.getElementById('pdfScrollHint');
+  const leftoverHint = document.getElementById('contentScrollHint');
   if (leftoverHint) leftoverHint.remove();
 
   document.getElementById('screensaver-view').classList.add('active');
