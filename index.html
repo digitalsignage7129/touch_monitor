@@ -358,6 +358,9 @@ async function setupScreensaver(manifest){
   if (url && video.dataset.loadedSrc !== manifest.screensaver) {
     video.src = url;
     video.dataset.loadedSrc = manifest.screensaver; // 同じ動画の再読み込みを避ける
+    // 表示中かどうかに関わらず、読み込めた時点でバックグラウンド再生を開始しておく
+    // (画面に表示されるタイミングでは既に流れている状態にするため)
+    video.play().catch(() => {});
   }
 }
 
@@ -783,10 +786,10 @@ function renderQuizResult(){
 document.getElementById('quizBackBtn').addEventListener('click', closeQuiz);
 
 /* =========================================================
-   スクリーンセーバー(10分間操作がなければ表示)
+   スクリーンセーバー(5分間操作がなければ表示)
    ========================================================= */
 
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 let idleTimer = null;
 
 function showScreensaver(){
@@ -800,16 +803,17 @@ function showScreensaver(){
   if (leftoverHint) leftoverHint.remove();
 
   document.getElementById('screensaver-view').classList.add('active');
+  // 動画は表示・非表示に関わらず途切れさせず流し続ける(裏側でもループ再生を続ける)。
+  // 表示のたびに先頭へ戻したり止めたりしない。
   const ssVideo = document.getElementById('screensaverVideo');
-  if (ssVideo.src) {
-    ssVideo.currentTime = 0;
+  if (ssVideo.src && ssVideo.paused) {
     ssVideo.play().catch(() => {});
   }
 }
 
 function hideScreensaver(){
   document.getElementById('screensaver-view').classList.remove('active');
-  document.getElementById('screensaverVideo').pause();
+  // 動画は止めない(裏側でもループ再生を続けたままにする)
 }
 
 function resetIdleTimer(){
