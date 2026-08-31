@@ -115,6 +115,51 @@
   .back-btn:active{ background:var(--accent); color:#20242b; }
   .viewer-title{ pointer-events:auto; font-size:15px; font-weight:700; color:var(--text); background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:10px; }
 
+  /* ---- スクリーンセーバー(10分無操作で表示) ---- */
+  #screensaver-view{
+    display:none; position:absolute; top:0; left:0; right:0; bottom:0;
+    width:100%; height:100%; z-index:200; background:#000; cursor:pointer;
+  }
+  #screensaver-view.active{ display:block; }
+  #screensaverVideo{ width:100%; height:100%; object-fit:cover; }
+  .screensaver-overlay{
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.25);
+  }
+  .screensaver-text{
+    text-align:center; color:#fff; font-size:44px; font-weight:900;
+    letter-spacing:0.08em; text-shadow:0 4px 18px rgba(0,0,0,0.6);
+    animation: screensaverPulse 2.2s ease-in-out infinite;
+  }
+  .screensaver-text span{
+    display:block; font-size:22px; font-weight:700; margin-top:14px; letter-spacing:0.04em;
+  }
+  @keyframes screensaverPulse{
+    0%, 100% { opacity:1; }
+    50% { opacity:0.55; }
+  }
+  .scroll-hint{
+    position:absolute; left:50%; bottom:28px; z-index:40;
+    transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    pointer-events:none;
+    background:rgba(0,0,0,0.55);
+    padding:12px 22px; border-radius:999px;
+    color:var(--text); font-size:15px; font-weight:700;
+    animation: scrollHintFade 2.5s ease-in-out infinite;
+  }
+  .scroll-hint .arrow{
+    width:16px; height:16px;
+    border-right:4px solid var(--accent); border-bottom:4px solid var(--accent);
+    transform:rotate(45deg);
+  }
+  .scroll-hint.hide{ opacity:0; transition: opacity 0.6s ease; }
+  @keyframes scrollHintFade{
+    0%, 100% { transform:translate(-50%, 0); opacity:1; }
+    50% { transform:translate(-50%, 8px); opacity:0.6; }
+  }
+
   /* ---- クイズビューア ---- */
   #quiz-view{ display:none; position:absolute; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background: linear-gradient(160deg, #1B2430, #263444); z-index:100; }
   #quiz-view.active{ display:flex; flex-direction:column; }
@@ -185,6 +230,16 @@
       <div class="viewer-title">日本国土開発クイズ</div>
     </div>
     <div class="quiz-body" id="quizBody"></div>
+  </div>
+
+  <div id="screensaver-view">
+    <video id="screensaverVideo" src="assets/screensaver.mp4" autoplay loop muted playsinline></video>
+    <div class="screensaver-overlay">
+      <div class="screensaver-text">
+        PLEASE TOUCH SCREEN<br>
+        <span>画面にタッチしてください</span>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -434,7 +489,11 @@ function queuePdfThumbnail(url, tile){
 
 // PDFの全ページを縦スクロールで表示する(ブラウザ内蔵PDFビューアに
 // 頼らず、pdf.jsで確実に描画する。多くのAndroid WebViewはiframeで
-// PDFをそのまま表示できないため)
+// PDFをそのまま表示できないため)。
+// 体感速度のため、1ページ目が描画でき次第すぐ表示し、残りのページは
+// 裏側で順番に描画して追加していく(全ページ完了を待たない)。
+// また、画面幅に対して過剰に高解像度で描画すると遅くなるため、
+// 実際に必要なサイズに合わせて解像度を計算する。
 async function renderPdfInto(container, url){
   container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;">PDFを読み込んでいます…</div>`;
   if (!window.pdfjsLib) {
@@ -445,13 +504,20 @@ async function renderPdfInto(container, url){
   try {
     const bytes = await fetchPdfBytes(url);
     pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+
     container.innerHTML = '';
     container.style.overflowY = 'auto';
     container.style.background = '#3a3f45';
     container.style.padding = '16px';
-    for (let n = 1; n <= pdf.numPages; n++) {
-      const page = await pdf.getPage(n);
-      const viewport = page.getViewport({ scale: 1.4 });
+
+    // 画面幅に合わせた解像度を計算する(高すぎる解像度は描画が遅くなる)
+    const availableWidth = Math.max(320, container.clientWidth - 32);
+    const firstPage = await pdf.getPage(1);
+    const naturalViewport = firstPage.getViewport({ scale: 1 });
+    const fitScale = Math.min(2.0, Math.max(0.8, availableWidth / naturalViewport.width));
+
+    const renderPage = async (page) => {
+      const viewport = page.getViewport({ scale: fitScale });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -461,8 +527,22 @@ async function renderPdfInto(container, url){
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       const ctx = canvas.getContext('2d');
+      container.appendChild(canvas); // 先にDOMへ入れておき、描画完了次第見えるようにする
       await page.render({ canvasContext: ctx, viewport }).promise;
-      container.appendChild(canvas);
+    };
+
+    // 1ページ目から順に描画してその都度DOMへ追加していく。
+    // canvasは描画完了前にappendChildしているため、1ページ目は
+    // 「読み込んでいます」の表示が消えた直後には画面に出始める。
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const page = await pdf.getPage(n);
+      await renderPage(page);
+    }
+
+    // 複数ページある場合は、スクロールできることが伝わるよう
+    // 案内アイコンを一時的に表示する(スクロールし始めたら消える)
+    if (pdf.numPages > 1) {
+      showPdfScrollHint(container);
     }
   } catch (e) {
     console.error('PDF表示エラー:', e);
@@ -470,6 +550,29 @@ async function renderPdfInto(container, url){
   } finally {
     if (pdf) pdf.destroy();
   }
+}
+
+// PDFが複数ページある場合、「下にスクロールできる」ことが伝わるよう
+// 矢印アイコン付きの案内を一時的に表示する。スクロールを始めたら、
+// または数秒経過したら自動的に消える。
+function showPdfScrollHint(scrollContainer){
+  const viewerView = document.getElementById('viewer-view');
+  const hint = document.createElement('div');
+  hint.className = 'scroll-hint';
+  hint.id = 'pdfScrollHint';
+  hint.innerHTML = `<div class="arrow"></div><span>下にスクロールできます</span>`;
+  viewerView.appendChild(hint);
+
+  let removed = false;
+  const remove = () => {
+    if (removed) return;
+    removed = true;
+    hint.classList.add('hide');
+    setTimeout(() => hint.remove(), 700);
+  };
+
+  scrollContainer.addEventListener('scroll', remove, { once: true, passive: true });
+  setTimeout(remove, 5000); // スクロールしなくても数秒後には自動で消す
 }
 
 async function renderGrid(manifest){
@@ -579,6 +682,9 @@ document.getElementById('backBtn').addEventListener('click', () => {
   if (video) { video.pause(); }
   document.getElementById('viewer-view').classList.remove('active');
   stage.innerHTML = "";
+  stage.style.overflowY = ''; // PDF表示用に変えたスクロール設定を元に戻す
+  const leftoverHint = document.getElementById('pdfScrollHint');
+  if (leftoverHint) leftoverHint.remove();
   document.getElementById('grid-view').style.display = 'flex';
 });
 
@@ -766,6 +872,53 @@ function renderQuizResult(){
 }
 
 document.getElementById('quizBackBtn').addEventListener('click', closeQuiz);
+
+/* =========================================================
+   スクリーンセーバー(10分間操作がなければ表示)
+   ========================================================= */
+
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10分
+let idleTimer = null;
+
+function showScreensaver(){
+  // 途中まで開いていた動画・PDF・クイズがあれば一覧表示に戻しておく
+  const video = document.querySelector('#viewerStage video');
+  if (video) video.pause();
+  document.getElementById('viewer-view').classList.remove('active');
+  document.getElementById('viewerStage').innerHTML = '';
+  document.getElementById('quiz-view').classList.remove('active');
+  document.getElementById('grid-view').style.display = 'flex';
+  const leftoverHint = document.getElementById('pdfScrollHint');
+  if (leftoverHint) leftoverHint.remove();
+
+  document.getElementById('screensaver-view').classList.add('active');
+  const ssVideo = document.getElementById('screensaverVideo');
+  ssVideo.currentTime = 0;
+  ssVideo.play().catch(() => { /* 自動再生できなくても静止画のまま表示を継続 */ });
+}
+
+function hideScreensaver(){
+  document.getElementById('screensaver-view').classList.remove('active');
+  document.getElementById('screensaverVideo').pause();
+}
+
+function resetIdleTimer(){
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(showScreensaver, IDLE_TIMEOUT_MS);
+}
+
+// タッチ・クリック・キー操作などをすべて「操作あり」とみなしてタイマーをリセットする
+['touchstart', 'mousedown', 'click', 'keydown'].forEach((evt) => {
+  document.addEventListener(evt, () => {
+    const wasShowingScreensaver = document.getElementById('screensaver-view').classList.contains('active');
+    if (wasShowingScreensaver) {
+      hideScreensaver(); // スクリーンセーバー中のタップは「解除」だけを行う
+    }
+    resetIdleTimer();
+  }, { passive: true });
+});
+
+resetIdleTimer();
 
 syncContent();
 setInterval(syncContent, SYNC_INTERVAL_MS);
