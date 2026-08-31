@@ -443,14 +443,29 @@ function captureVideoFrame(url){
   });
 }
 
+// すでにローカルへ同期済み(キャッシュ済み)のPDFであれば、そのデータを
+// そのまま使う(ネット速度に一切左右されず瞬時に開ける)。
+// まだ同期が済んでいない(アップロード直後など)場合のみ、
+// ネット経由の範囲リクエストにフォールバックする。
+async function getPdfSource(path){
+  try {
+    const cache = await caches.open(CONTENT_CACHE);
+    const cached = await cache.match(path);
+    if (cached) {
+      const buf = await cached.arrayBuffer();
+      return { data: new Uint8Array(buf) }; // ローカルデータなので即座に開ける
+    }
+  } catch (e) { /* キャッシュ参照に失敗した場合はネット経由にフォールバック */ }
+  return { url: path }; // 未同期の場合のみ、範囲リクエストで少しずつ取得
+}
+
 // PDFの1ページ目を静止画(dataURL)としてキャプチャする(タイルのサムネイル用)。
-// URLを直接pdf.jsへ渡し、範囲リクエスト(Range)でページ1に必要な分だけ
-// 取得させる(全体ダウンロードを待たない)。
 async function renderPdfThumbnail(url){
   if (!window.pdfjsLib) return null;
   let pdf = null;
   try {
-    pdf = await pdfjsLib.getDocument({ url }).promise;
+    const src = await getPdfSource(url);
+    pdf = await pdfjsLib.getDocument(src).promise;
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 0.6 });
     const canvas = document.createElement('canvas');
@@ -490,11 +505,9 @@ function queuePdfThumbnail(url, tile){
     .catch((e) => console.warn('PDFサムネイル処理エラー:', e));
 }
 
-// PDFの全ページを縦スクロールで表示する。URLを直接pdf.jsへ渡し、
-// 範囲リクエスト(Range)対応であれば必要なページ分だけを取得しながら
-// 順次表示する(全体ダウンロードの完了を待たない)。
-// R2側のCORS設定でRangeヘッダーが許可されていない場合は、pdf.js が
-// 自動的に「全体を1回で取得する」方式にフォールバックする。
+// PDFの全ページを縦スクロールで表示する。すでにローカルへ同期済みなら
+// そのデータを直接使い(ネット速度に左右されず瞬時に表示)、
+// 未同期の場合のみ範囲リクエスト(Range)で少しずつ取得しながら表示する。
 async function renderPdfInto(container, url){
   container.innerHTML = `<div style="color:#8FA0B3;font-size:18px;" id="pdfLoadingMsg">PDFを読み込んでいます…</div>`;
   if (!window.pdfjsLib) {
@@ -503,7 +516,8 @@ async function renderPdfInto(container, url){
   }
   let pdf = null;
   try {
-    const loadingTask = pdfjsLib.getDocument({ url });
+    const src = await getPdfSource(url);
+    const loadingTask = pdfjsLib.getDocument(src);
     loadingTask.onProgress = (progress) => {
       const msgEl = document.getElementById('pdfLoadingMsg');
       if (msgEl && progress.total) {
@@ -626,8 +640,8 @@ async function renderGrid(manifest){
     }
 
     if (it.type === 'pdf') {
-      // サムネイルは常に元のURL(R2)を範囲リクエストで読ませる
-      // (ローカルキャッシュのBlob URLだと範囲リクエストが効かないため)
+      // it.media(元のURL)を渡す。関数内部でローカルキャッシュの有無を
+      // 判定し、あればそちらを、なければ範囲リクエストを使う。
       queuePdfThumbnail(it.media, tile);
     }
   }
@@ -651,7 +665,8 @@ async function openViewer(it){
   if (it.type === 'pdf') {
     stage.innerHTML = '';
     stage.style.display = 'block';
-    // PDF表示は常に元のURL(R2)を範囲リクエストで読ませる
+    // it.media(元のURL)を渡す。関数内部でローカルキャッシュの有無を
+    // 判定し、あればそちらを、なければ範囲リクエストを使う。
     await renderPdfInto(stage, it.media);
   } else {
     const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
