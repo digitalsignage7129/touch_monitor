@@ -16,9 +16,10 @@
   }
   .card{
     background:var(--panel); border-radius:20px; padding:36px;
-    width:100%; max-width:460px;
+    width:100%; max-width:480px; margin-bottom:24px;
   }
   h1{ font-size:22px; margin-bottom:6px; }
+  h2{ font-size:18px; margin-bottom:6px; }
   .sub{ color:var(--text-dim); font-size:14px; margin-bottom:24px; }
   label{ display:block; font-size:14px; margin:16px 0 6px; color:var(--text-dim); }
   input[type=text], input[type=password], select{
@@ -40,15 +41,18 @@
     background:var(--accent); color:#20242b; font-size:16px; font-weight:700; cursor:pointer;
   }
   button:disabled{ opacity:0.5; cursor:not-allowed; }
-  #status{ margin-top:16px; font-size:14px; text-align:center; min-height:20px; }
-  #status.ok{ color:#7CD98A; }
-  #status.err{ color:#FF6B6B; }
+  .status{ margin-top:16px; font-size:14px; text-align:center; min-height:20px; }
+  .status.ok{ color:#7CD98A; }
+  .status.err{ color:#FF6B6B; }
+  .divider-label{ text-align:center; color:var(--text-dim); font-size:13px; margin:8px 0 20px; }
 </style>
 </head>
 <body>
+<div>
+
   <div class="card">
     <h1>コンテンツのアップロード</h1>
-    <div class="sub">現場モニターに表示する画像・動画を追加できます</div>
+    <div class="sub">現場モニターに表示する画像・動画・PDFを追加できます</div>
 
     <label>パスワード</label>
     <input type="password" id="password" placeholder="担当者から共有されたパスワード">
@@ -71,13 +75,30 @@
     <input type="file" id="file" accept="image/*,video/*,application/pdf">
 
     <button id="submitBtn">アップロードする</button>
-    <div id="status"></div>
+    <div class="status" id="status"></div>
   </div>
+
+  <div class="card">
+    <h2>スクリーンセーバー動画の変更</h2>
+    <div class="sub">10分間操作がないときに表示される動画です。現在の動画を上書きします。</div>
+
+    <label>パスワード</label>
+    <input type="password" id="ssPassword" placeholder="担当者から共有されたパスワード">
+
+    <label>動画ファイル</label>
+    <input type="file" id="ssFile" accept="video/*">
+
+    <button id="ssSubmitBtn">スクリーンセーバーを更新する</button>
+    <div class="status" id="ssStatus"></div>
+  </div>
+
+</div>
 
 <script>
   // ↓ 実際にデプロイしたCloudflare WorkersのURLに書き換えてください
   const WORKER_URL = "https://little-voice-be13.test-digital-signage-test.workers.dev";
 
+  // ---- 通常コンテンツのアップロード ----
   let selectedSlot = null;
   const slotGrid = document.getElementById("slotGrid");
   for (let i = 1; i <= 5; i++) {
@@ -103,12 +124,12 @@
     const file = fileInput.files[0];
 
     if (!password || !label || !file || !selectedSlot) {
-      setStatus("パスワード・表示名・配置スロット・ファイルをすべて入力してください", "err");
+      setStatus(statusEl, "パスワード・表示名・配置スロット・ファイルをすべて入力してください", "err");
       return;
     }
 
     submitBtn.disabled = true;
-    setStatus("アップロード中です。画面を閉じずにお待ちください…", "");
+    setStatus(statusEl, "アップロード中です。画面を閉じずにお待ちください…", "");
 
     try {
       const res = await fetch(WORKER_URL, {
@@ -121,28 +142,70 @@
           "X-File-Name": encodeURIComponent(file.name),
           "X-Slot": String(selectedSlot),
         },
-        body: file, // ファイル本体をそのままストリーミング送信(FormDataを使わない)
+        body: file,
       });
       const data = await res.json();
       if (data.ok) {
-        setStatus("アップロードが完了しました。数分後にモニターへ反映されます。", "ok");
+        setStatus(statusEl, "アップロードが完了しました。数分後にモニターへ反映されます。", "ok");
         document.getElementById("label").value = "";
         fileInput.value = "";
         document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
         selectedSlot = null;
       } else {
-        setStatus("エラー: " + data.error, "err");
+        setStatus(statusEl, "エラー: " + data.error, "err");
       }
     } catch (e) {
-      setStatus("通信エラーが発生しました。時間をおいて再度お試しください。", "err");
+      setStatus(statusEl, "通信エラーが発生しました。時間をおいて再度お試しください。", "err");
     } finally {
       submitBtn.disabled = false;
     }
   });
 
-  function setStatus(text, cls){
-    statusEl.textContent = text;
-    statusEl.className = cls;
+  // ---- スクリーンセーバーのアップロード ----
+  const ssSubmitBtn = document.getElementById("ssSubmitBtn");
+  const ssStatusEl = document.getElementById("ssStatus");
+
+  ssSubmitBtn.addEventListener("click", async () => {
+    const password = document.getElementById("ssPassword").value;
+    const fileInput = document.getElementById("ssFile");
+    const file = fileInput.files[0];
+
+    if (!password || !file) {
+      setStatus(ssStatusEl, "パスワードと動画ファイルを入力してください", "err");
+      return;
+    }
+
+    ssSubmitBtn.disabled = true;
+    setStatus(ssStatusEl, "アップロード中です。画面を閉じずにお待ちください…", "");
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+          "X-Upload-Password": encodeURIComponent(password),
+          "X-Media-Type": "screensaver",
+          "X-File-Name": encodeURIComponent(file.name),
+        },
+        body: file,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus(ssStatusEl, "スクリーンセーバーを更新しました。数分後に反映されます。", "ok");
+        fileInput.value = "";
+      } else {
+        setStatus(ssStatusEl, "エラー: " + data.error, "err");
+      }
+    } catch (e) {
+      setStatus(ssStatusEl, "通信エラーが発生しました。時間をおいて再度お試しください。", "err");
+    } finally {
+      ssSubmitBtn.disabled = false;
+    }
+  });
+
+  function setStatus(el, text, cls){
+    el.textContent = text;
+    el.className = "status " + cls;
   }
 </script>
 </body>
