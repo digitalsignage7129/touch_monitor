@@ -515,8 +515,11 @@ async function renderPdfInto(container, url){
     return;
   }
   let pdf = null;
+  const t0 = performance.now();
   try {
     const src = await getPdfSource(url);
+    console.log(`[PDF計測] データ取得完了: ${Math.round(performance.now() - t0)}ms (${'data' in src ? 'ローカルキャッシュ' : 'ネットワーク'})`);
+
     const loadingTask = pdfjsLib.getDocument(src);
     loadingTask.onProgress = (progress) => {
       const msgEl = document.getElementById('pdfLoadingMsg');
@@ -526,6 +529,7 @@ async function renderPdfInto(container, url){
       }
     };
     pdf = await loadingTask.promise;
+    console.log(`[PDF計測] PDF構造解析完了: ${Math.round(performance.now() - t0)}ms (総ページ数:${pdf.numPages})`);
 
     container.innerHTML = '';
     container.style.overflowY = 'auto';
@@ -534,10 +538,13 @@ async function renderPdfInto(container, url){
 
     const availableWidth = Math.max(320, container.clientWidth - 32);
     const firstPage = await pdf.getPage(1);
+    console.log(`[PDF計測] 1ページ目オブジェクト取得: ${Math.round(performance.now() - t0)}ms`);
     const naturalViewport = firstPage.getViewport({ scale: 1 });
-    const fitScale = Math.min(2.0, Math.max(0.8, availableWidth / naturalViewport.width));
+    // 描画解像度の上限を下げ(2.0→1.2)、フォントのラスタライズ負荷を抑える
+    const fitScale = Math.min(1.2, Math.max(0.8, availableWidth / naturalViewport.width));
 
-    const renderPage = async (page) => {
+    const renderPage = async (page, label) => {
+      const pageT0 = performance.now();
       const viewport = page.getViewport({ scale: fitScale });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
@@ -550,11 +557,14 @@ async function renderPdfInto(container, url){
       const ctx = canvas.getContext('2d');
       container.appendChild(canvas);
       await page.render({ canvasContext: ctx, viewport }).promise;
+      console.log(`[PDF計測] ${label}描画完了: ${Math.round(performance.now() - pageT0)}ms (累計 ${Math.round(performance.now() - t0)}ms)`);
     };
 
-    for (let n = 1; n <= pdf.numPages; n++) {
+    await renderPage(firstPage, "1ページ目");
+
+    for (let n = 2; n <= pdf.numPages; n++) {
       const page = await pdf.getPage(n);
-      await renderPage(page);
+      await renderPage(page, `${n}ページ目`);
     }
 
     if (pdf.numPages > 1) {
