@@ -65,6 +65,7 @@
       <option value="image">写真</option>
       <option value="video">動画</option>
       <option value="gallery">画像アルバム(複数枚)</option>
+      <option value="html">HTMLページ(自作コンテンツ)</option>
     </select>
 
     <label>配置スロット(1〜5のどこに表示するか。6枠目は固定のクイズです)</label>
@@ -72,7 +73,7 @@
     <div class="hint">既に使われているスロットを選ぶと、その位置の内容だけが置き換わります</div>
 
     <label>ファイル(画像アルバムを選んだ場合は複数枚選択できます)</label>
-    <input type="file" id="file" accept="image/*,video/*" multiple>
+    <input type="file" id="file" accept="image/*,video/*,.html,.htm,text/html" multiple>
     <div class="hint" id="fileCountHint"></div>
 
     <button id="submitBtn">アップロードする</button>
