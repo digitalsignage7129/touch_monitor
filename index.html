@@ -312,9 +312,11 @@ async function syncContent() {
     // gallery型は media が配列(複数画像)なので、平坦化してURL一覧にする
     const mediaUrls = [];
     for (const it of (manifest.items || [])) {
-      if (!it.media) continue;
-      if (Array.isArray(it.media)) mediaUrls.push(...it.media);
-      else mediaUrls.push(it.media);
+      if (it.media) {
+        if (Array.isArray(it.media)) mediaUrls.push(...it.media);
+        else mediaUrls.push(it.media);
+      }
+      if (it.icon) mediaUrls.push(it.icon); // HTML種別のアイコン画像
     }
     if (manifest.screensaver) mediaUrls.push(manifest.screensaver);
 
@@ -524,7 +526,12 @@ async function renderGrid(manifest){
     if (it.type === 'video') {
       mediaHtml = `<span class="fallback-icon">🎬</span>`;
     } else if (it.type === 'html') {
-      mediaHtml = `<span class="fallback-icon">🌐</span>`;
+      if (it.icon) {
+        const iconUrl = await resolveMediaUrl(it.icon).catch(() => it.icon);
+        mediaHtml = `<img src="${iconUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🌐'}))">`;
+      } else {
+        mediaHtml = `<span class="fallback-icon">🌐</span>`;
+      }
     } else if (mediaUrl) {
       mediaHtml = `<img src="${mediaUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🖼️'}))">`;
     } else {
