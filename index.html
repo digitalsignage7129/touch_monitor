@@ -484,6 +484,7 @@ async function renderGalleryInto(container, mediaList){
   container.style.background = '#000';
   container.style.padding = '16px';
   container.innerHTML = '';
+  container.scrollTop = 0; // 前回のスクロール位置が残らないよう、必ず先頭から表示する
 
   for (const path of urls) {
     const url = await resolveMediaUrl(path).catch(() => path);
@@ -495,6 +496,8 @@ async function renderGalleryInto(container, mediaList){
     img.style.height = 'auto';
     container.appendChild(img);
   }
+
+  container.scrollTop = 0; // 画像追加後、念のためもう一度先頭に戻す
 
   if (urls.length > 1) {
     showScrollHint(container);
