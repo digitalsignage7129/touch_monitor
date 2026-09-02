@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-31T08:27:21.283Z",
+  "version": "2026-09-02T07:56:39.281Z",
   "items": [
     {
       "id": "item_1787563359386",
@@ -36,6 +36,15 @@
         "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1788164840126_7bat42.jpg"
       ],
       "updated_at": "2026-08-31T08:27:21.283Z"
+    },
+    {
+      "id": "item_1788335798573",
+      "slot": 5,
+      "type": "html",
+      "tag": "ページ",
+      "label": "かみしばい",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1788335798573.html",
+      "updated_at": "2026-09-02T07:56:39.281Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver.mp4"
