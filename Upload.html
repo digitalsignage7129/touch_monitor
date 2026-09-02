@@ -76,6 +76,11 @@
     <input type="file" id="file" accept="image/*,video/*,.html,.htm,text/html" multiple>
     <div class="hint" id="fileCountHint"></div>
 
+    <div id="htmlIconRow" style="display:none;">
+      <label>タイルのアイコン画像(省略可。指定しない場合は🌐マークになります)</label>
+      <input type="file" id="htmlIconFile" accept="image/*">
+    </div>
+
     <button id="submitBtn">アップロードする</button>
     <div class="status" id="status"></div>
   </div>
@@ -122,6 +127,10 @@
     const count = e.target.files.length;
     document.getElementById("fileCountHint").textContent =
       count > 1 ? `${count}枚を選択中(画像アルバムとしてまとめてアップロードされます)` : "";
+  });
+
+  document.getElementById("type").addEventListener("change", (e) => {
+    document.getElementById("htmlIconRow").style.display = (e.target.value === "html") ? "block" : "none";
   });
 
   submitBtn.addEventListener("click", async () => {
@@ -175,8 +184,32 @@
 
         setStatus(statusEl, `アップロードが完了しました(全${urls.length}枚)。数分後にモニターへ反映されます。`, "ok");
       } else {
-        // 通常コンテンツ(画像1枚・動画)
+        // 通常コンテンツ(画像1枚・動画・HTML)
         const file = files[0];
+
+        // HTML種別の場合、アイコン画像が選ばれていれば先にアップロードしてURLを取得する
+        let iconUrl = "";
+        if (type === "html") {
+          const iconFile = document.getElementById("htmlIconFile").files[0];
+          if (iconFile) {
+            setStatus(statusEl, "アイコン画像をアップロード中…", "");
+            const iconRes = await fetch(WORKER_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": iconFile.type || "application/octet-stream",
+                "X-Upload-Password": encodeURIComponent(password),
+                "X-Media-Type": "gallery-image",
+                "X-File-Name": encodeURIComponent(iconFile.name),
+              },
+              body: iconFile,
+            });
+            const iconData = await iconRes.json();
+            if (!iconData.ok) throw new Error(iconData.error || "アイコン画像のアップロードに失敗しました");
+            iconUrl = iconData.url;
+          }
+        }
+
+        setStatus(statusEl, "アップロード中です。画面を閉じずにお待ちください…", "");
         const res = await fetch(WORKER_URL, {
           method: "POST",
           headers: {
@@ -186,6 +219,7 @@
             "X-Media-Type": type,
             "X-File-Name": encodeURIComponent(file.name),
             "X-Slot": String(selectedSlot),
+            ...(iconUrl ? { "X-Icon-Url": encodeURIComponent(iconUrl) } : {}),
           },
           body: file,
         });
@@ -196,6 +230,7 @@
 
       document.getElementById("label").value = "";
       fileInput.value = "";
+      document.getElementById("htmlIconFile").value = "";
       document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
       selectedSlot = null;
     } catch (e) {
