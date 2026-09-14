@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T05:23:02.098Z",
+  "version": "2026-09-14T05:51:55.282Z",
   "items": [
     {
       "id": "item_1789355455434",
@@ -256,6 +256,16 @@
         "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789363381411_wbisaw.jpg"
       ],
       "updated_at": "2026-09-14T05:23:02.098Z"
+    },
+    {
+      "id": "item_1789365114794",
+      "slot": 5,
+      "type": "html",
+      "tag": "ページ",
+      "label": "今週の天気",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789365114794.html",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789365114553_foxf12.png",
+      "updated_at": "2026-09-14T05:51:55.282Z"
     }
   ],
   "quiz": [
