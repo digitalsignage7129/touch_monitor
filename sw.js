@@ -34,7 +34,9 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  const isManifest = url.pathname.endsWith("manifest.json");
+  // "manifest.json" だけでなく、現場ごとの "manifest-〇〇.json" も
+  // すべて同じ扱い(キャッシュせずネットワーク優先)にする。
+  const isManifest = /\/manifest(-[^/]+)?\.json$/.test(url.pathname);
 
   if (isManifest) {
     // manifest.json は常にネットワークを優先(キャッシュしない)。
