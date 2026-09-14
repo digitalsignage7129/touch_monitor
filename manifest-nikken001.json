@@ -1,15 +1,6 @@
 {
-  "version": "2026-09-14T09:17:11.991Z",
+  "version": "2026-09-14T09:17:31.950Z",
   "items": [
-    {
-      "id": "item_1789355455434",
-      "slot": 2,
-      "type": "video",
-      "tag": "動画",
-      "label": "この新しいステージでいま、ともに",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355455434.mp4",
-      "updated_at": "2026-09-14T03:10:57.556Z"
-    },
     {
       "id": "item_1789355503184",
       "slot": 3,
@@ -275,6 +266,15 @@
       "label": "企業紹介",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377429371.mp4",
       "updated_at": "2026-09-14T09:17:11.991Z"
+    },
+    {
+      "id": "item_1789377451289",
+      "slot": 2,
+      "type": "video",
+      "tag": "動画",
+      "label": "事業紹介",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377451289.mp4",
+      "updated_at": "2026-09-14T09:17:31.950Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
