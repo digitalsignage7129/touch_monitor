@@ -48,7 +48,7 @@
 </style>
 </head>
 <body>
-<div>
+<div id="pageWrap">
 
   <div class="card">
     <h1>コンテンツのアップロード</h1>
@@ -115,7 +115,7 @@
     const badge = document.createElement('div');
     badge.textContent = `現場: ${SITE_ID}`;
     badge.style.cssText = 'text-align:center;color:#F5A623;font-weight:700;font-size:13px;margin-bottom:12px;';
-    document.body.insertBefore(badge, document.body.firstChild);
+    document.getElementById('pageWrap').insertBefore(badge, document.getElementById('pageWrap').firstChild);
   }
 
   // ---- 通常コンテンツのアップロード ----
