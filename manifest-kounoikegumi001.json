@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T09:37:37.799Z",
+  "version": "2026-09-14T11:26:10.176Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -38,14 +38,14 @@
       "updated_at": "2026-09-14T09:36:50.424Z"
     },
     {
-      "id": "item_1789378657639",
+      "id": "item_1789385169654",
       "slot": 6,
       "type": "html",
       "tag": "ページ",
       "label": "週間天気予報",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378657639.html",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378657084_nwyv13.png",
-      "updated_at": "2026-09-14T09:37:37.799Z"
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385169654.html",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385169024_vq8aiz.png",
+      "updated_at": "2026-09-14T11:26:10.176Z"
     }
   ]
 }
