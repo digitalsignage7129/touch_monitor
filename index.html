@@ -227,7 +227,7 @@
   <div id="quiz-view">
     <div class="viewer-topbar">
       <button class="back-btn" id="quizBackBtn">&larr; 一覧に戻る</button>
-      <div class="viewer-title">日本国土開発クイズ</div>
+      <div class="viewer-title" id="quizViewerTitle">日本国土開発クイズ</div>
     </div>
     <div class="quiz-body" id="quizBody"></div>
   </div>
@@ -299,6 +299,7 @@ async function syncContent() {
   if (!fromNetwork) {
     renderGrid(manifest);
     setupScreensaver(manifest);
+    setupQuizFromManifest(manifest);
     setSyncBadge("オフライン(前回データ表示中)");
     return;
   }
@@ -306,6 +307,7 @@ async function syncContent() {
   if (localVersion === manifest.version) {
     renderGrid(manifest);
     setupScreensaver(manifest);
+    setupQuizFromManifest(manifest);
     setSyncBadge("最新の状態です");
     return;
   }
@@ -335,6 +337,7 @@ async function syncContent() {
     await setCachedVersion(cache, manifest.version);
     renderGrid(manifest);
     setupScreensaver(manifest);
+    setupQuizFromManifest(manifest);
     setSyncBadge("更新完了");
   } catch (e) {
     setSyncBadge("更新に失敗(次回再試行)");
@@ -343,6 +346,7 @@ async function syncContent() {
       const m = await cachedManifest.json();
       renderGrid(m);
       setupScreensaver(m);
+      setupQuizFromManifest(m);
     }
   }
 }
@@ -368,6 +372,39 @@ async function setupScreensaver(manifest){
     // 表示中かどうかに関わらず、読み込めた時点でバックグラウンド再生を開始しておく
     // (画面に表示されるタイミングでは既に流れている状態にするため)
     video.play().catch(() => {});
+  }
+}
+
+// manifest.json に quiz(問題一覧)が定義されていれば、その現場専用の
+// クイズに差し替える。
+//
+// 【重要】site指定なし(これまでの現場)の場合のみ、未指定時に
+// デフォルト(日本国土開発クイズ)を表示する。site指定がある(新しく
+// 追加した現場)の場合、quizが明示的に定義されていない限りクイズ自体を
+// 表示しない(他社の現場で無関係な会社のクイズが出てしまうのを防ぐため)。
+let quizAvailable = false;
+function setupQuizFromManifest(manifest){
+  if (Array.isArray(manifest.quiz) && manifest.quiz.length > 0) {
+    const valid = manifest.quiz.every((q) =>
+      q && typeof q.q === 'string' &&
+      Array.isArray(q.choices) && q.choices.length >= 2 &&
+      Number.isInteger(q.correct) && q.correct >= 0 && q.correct < q.choices.length
+    );
+    if (valid) {
+      QUIZ_QUESTIONS = manifest.quiz;
+      quizAvailable = true;
+      return;
+    }
+    console.warn('manifest.quiz の形式が不正なため、この現場のクイズは表示しません。');
+  }
+
+  if (!SITE_ID) {
+    // これまでの現場(site指定なし)は、従来通りデフォルトクイズを表示する
+    QUIZ_QUESTIONS = DEFAULT_QUIZ_QUESTIONS;
+    quizAvailable = true;
+  } else {
+    // 新しい現場でquiz未定義の場合は、クイズタイル自体を出さない
+    quizAvailable = false;
   }
 }
 
@@ -570,15 +607,20 @@ async function renderGrid(manifest){
     }
   }
 
-  const quizTile = document.createElement('div');
-  quizTile.className = 'tile quiz-tile';
-  quizTile.innerHTML = `
-    <div class="tile-tag">クイズ</div>
-    <div class="tile-media"><img src="assets/quiz-icon.png" alt="クイズ" style="object-fit:contain;padding:14px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🧩'}))"></div>
-    <div class="tile-label">日本国土開発クイズに挑戦!</div>
-  `;
-  quizTile.addEventListener('click', openQuiz);
-  gridWrap.appendChild(quizTile);
+  if (quizAvailable) {
+    const quizTile = document.createElement('div');
+    quizTile.className = 'tile quiz-tile';
+    const quizLabel = (QUIZ_QUESTIONS === DEFAULT_QUIZ_QUESTIONS)
+      ? '日本国土開発クイズに挑戦!'
+      : 'クイズに挑戦!';
+    quizTile.innerHTML = `
+      <div class="tile-tag">クイズ</div>
+      <div class="tile-media"><img src="assets/quiz-icon.png" alt="クイズ" style="object-fit:contain;padding:14px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🧩'}))"></div>
+      <div class="tile-label">${quizLabel}</div>
+    `;
+    quizTile.addEventListener('click', openQuiz);
+    gridWrap.appendChild(quizTile);
+  }
 }
 
 async function openViewer(it){
@@ -659,7 +701,9 @@ function playQuizSound(key){
   } catch (e) {}
 }
 
-const QUIZ_QUESTIONS = [
+// 現場のmanifest.jsonに quiz(問題一覧)が指定されていればそちらを使い、
+// 無ければこのデフォルト(日本国土開発クイズ)を使う。
+const DEFAULT_QUIZ_QUESTIONS = [
   {
     emoji: "🏚️",
     q: "日本国土開発が生まれたのは、どんな時代?",
@@ -722,12 +766,18 @@ const QUIZ_QUESTIONS = [
   }
 ];
 
+// 実際にクイズで使う問題一覧。manifest読み込み時にsetupQuizFromManifest()で
+// 現場ごとの内容に差し替わる(なければデフォルトのまま)。
+let QUIZ_QUESTIONS = DEFAULT_QUIZ_QUESTIONS;
+
 let quizIndex = 0;
 let quizScore = 0;
 
 function openQuiz(){
   quizIndex = 0;
   quizScore = 0;
+  document.getElementById('quizViewerTitle').textContent =
+    (QUIZ_QUESTIONS === DEFAULT_QUIZ_QUESTIONS) ? '日本国土開発クイズ' : 'クイズ';
   document.getElementById('grid-view').style.display = 'none';
   document.getElementById('quiz-view').classList.add('active');
   renderQuizQuestion();
