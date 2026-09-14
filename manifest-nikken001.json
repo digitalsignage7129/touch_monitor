@@ -1,15 +1,6 @@
 {
-  "version": "2026-09-14T09:17:31.950Z",
+  "version": "2026-09-14T09:17:57.755Z",
   "items": [
-    {
-      "id": "item_1789355503184",
-      "slot": 3,
-      "type": "video",
-      "tag": "動画",
-      "label": "全自動簡易タイヤ洗浄機スマートウォッシュゲート",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355503184.mp4",
-      "updated_at": "2026-09-14T03:11:44.819Z"
-    },
     {
       "id": "gallery_1789363381757",
       "slot": 4,
@@ -275,6 +266,15 @@
       "label": "事業紹介",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377451289.mp4",
       "updated_at": "2026-09-14T09:17:31.950Z"
+    },
+    {
+      "id": "item_1789377476704",
+      "slot": 3,
+      "type": "video",
+      "tag": "動画",
+      "label": "環境プラントの新規建設",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377476704.mp4",
+      "updated_at": "2026-09-14T09:17:57.755Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
