@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T07:00:42.366Z",
+  "version": "2026-09-14T09:17:11.991Z",
   "items": [
     {
       "id": "item_1789355455434",
@@ -18,15 +18,6 @@
       "label": "全自動簡易タイヤ洗浄機スマートウォッシュゲート",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355503184.mp4",
       "updated_at": "2026-09-14T03:11:44.819Z"
-    },
-    {
-      "id": "item_1789355542196",
-      "slot": 1,
-      "type": "video",
-      "tag": "動画",
-      "label": "オンラインレンタルが便利！",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355542196.mp4",
-      "updated_at": "2026-09-14T03:12:24.633Z"
     },
     {
       "id": "gallery_1789363381757",
@@ -275,6 +266,15 @@
       "label": "週間工程表",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789369242200.jpg",
       "updated_at": "2026-09-14T07:00:42.366Z"
+    },
+    {
+      "id": "item_1789377429371",
+      "slot": 1,
+      "type": "video",
+      "tag": "動画",
+      "label": "企業紹介",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377429371.mp4",
+      "updated_at": "2026-09-14T09:17:11.991Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
