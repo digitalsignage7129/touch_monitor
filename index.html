@@ -253,8 +253,11 @@
    ・動画サムネイルは再生させず、静止画キャプチャに変換して表示
    ========================================================= */
 
-const MANIFEST_URL = "manifest.json";
-const CONTENT_CACHE = "signage-content-v4";
+// URLの ?site=現場名 で現場を判別する。指定がなければ従来通り
+// manifest.json(最初の現場)をそのまま使うので、既存の現場には影響しない。
+const SITE_ID = new URLSearchParams(window.location.search).get('site') || '';
+const MANIFEST_URL = SITE_ID ? `manifest-${SITE_ID}.json` : "manifest.json";
+const CONTENT_CACHE = SITE_ID ? `signage-content-v4-${SITE_ID}` : "signage-content-v4";
 const VERSION_KEY = new Request("https://internal.local/content-version-marker");
 const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
 const SLOT_COUNT = 5; // アップロード枠は5つ(残り1枠は固定クイズ)
