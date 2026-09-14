@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T03:12:24.633Z",
+  "version": "2026-09-14T03:54:23.958Z",
   "items": [
     {
       "id": "item_1789355455434",
@@ -90,5 +90,6 @@
       "correct": 1,
       "explain": "機械を貸すだけでなく、安全に使えるように講習や教育もおこなって、みんなが安心して働けるようにしているんだ。"
     }
-  ]
+  ],
+  "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
 }
