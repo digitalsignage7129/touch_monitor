@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T05:51:55.282Z",
+  "version": "2026-09-14T07:00:13.975Z",
   "items": [
     {
       "id": "item_1789355455434",
@@ -266,6 +266,16 @@
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789365114794.html",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789365114553_foxf12.png",
       "updated_at": "2026-09-14T05:51:55.282Z"
+    },
+    {
+      "id": "item_1789369213791",
+      "slot": 6,
+      "type": "html",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789369213791.html",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789369212957_wc6nm2.png",
+      "updated_at": "2026-09-14T07:00:13.975Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
