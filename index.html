@@ -260,7 +260,8 @@ const MANIFEST_URL = SITE_ID ? `manifest-${SITE_ID}.json` : "manifest.json";
 const CONTENT_CACHE = SITE_ID ? `signage-content-v4-${SITE_ID}` : "signage-content-v4";
 const VERSION_KEY = new Request("https://internal.local/content-version-marker");
 const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10分
-const SLOT_COUNT = 5; // アップロード枠は5つ(残り1枠は固定クイズ)
+const MAX_SLOT_COUNT = 6; // 技術的な上限(クイズを使わない現場は6枠すべてアップロード可能)
+let effectiveSlotCount = 5; // クイズ有無に応じてsetupQuizFromManifest()内で5または6に切り替わる
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
@@ -297,17 +298,17 @@ async function syncContent() {
   const localVersion = await getCachedVersion(cache);
 
   if (!fromNetwork) {
+    setupQuizFromManifest(manifest); // 枠数が決まるので、renderGridより先に実行する
     renderGrid(manifest);
     setupScreensaver(manifest);
-    setupQuizFromManifest(manifest);
     setSyncBadge("オフライン(前回データ表示中)");
     return;
   }
 
   if (localVersion === manifest.version) {
+    setupQuizFromManifest(manifest); // 枠数が決まるので、renderGridより先に実行する
     renderGrid(manifest);
     setupScreensaver(manifest);
-    setupQuizFromManifest(manifest);
     setSyncBadge("最新の状態です");
     return;
   }
@@ -335,18 +336,18 @@ async function syncContent() {
     }
     await cache.put(MANIFEST_URL, new Response(JSON.stringify(manifest)));
     await setCachedVersion(cache, manifest.version);
+    setupQuizFromManifest(manifest); // 枠数が決まるので、renderGridより先に実行する
     renderGrid(manifest);
     setupScreensaver(manifest);
-    setupQuizFromManifest(manifest);
     setSyncBadge("更新完了");
   } catch (e) {
     setSyncBadge("更新に失敗(次回再試行)");
     const cachedManifest = await cache.match(MANIFEST_URL);
     if (cachedManifest) {
       const m = await cachedManifest.json();
+      setupQuizFromManifest(m); // 枠数が決まるので、renderGridより先に実行する
       renderGrid(m);
       setupScreensaver(m);
-      setupQuizFromManifest(m);
     }
   }
 }
@@ -393,6 +394,7 @@ function setupQuizFromManifest(manifest){
     if (valid) {
       QUIZ_QUESTIONS = manifest.quiz;
       quizAvailable = true;
+      effectiveSlotCount = 5; // 6枠目はクイズが使うため、アップロード枠は5つ
       return;
     }
     console.warn('manifest.quiz の形式が不正なため、この現場のクイズは表示しません。');
@@ -402,9 +404,12 @@ function setupQuizFromManifest(manifest){
     // これまでの現場(site指定なし)は、従来通りデフォルトクイズを表示する
     QUIZ_QUESTIONS = DEFAULT_QUIZ_QUESTIONS;
     quizAvailable = true;
+    effectiveSlotCount = 5;
   } else {
-    // 新しい現場でquiz未定義の場合は、クイズタイル自体を出さない
+    // 新しい現場でquiz未定義の場合は、クイズタイル自体を出さず、
+    // 6枠目も通常のアップロード枠として使えるようにする
     quizAvailable = false;
+    effectiveSlotCount = 6;
   }
 }
 
@@ -412,7 +417,7 @@ function bySlot(items){
   const map = {};
   for (const it of (items || [])) {
     const slot = Number(it.slot);
-    if (slot >= 1 && slot <= SLOT_COUNT) map[slot] = it;
+    if (slot >= 1 && slot <= MAX_SLOT_COUNT) map[slot] = it;
   }
   return map;
 }
@@ -549,7 +554,7 @@ async function renderGrid(manifest){
   gridWrap.innerHTML = "";
   const slotted = bySlot(manifest.items);
 
-  for (let slot = 1; slot <= SLOT_COUNT; slot++) {
+  for (let slot = 1; slot <= effectiveSlotCount; slot++) {
     const it = slotted[slot];
     const tile = document.createElement('div');
 
