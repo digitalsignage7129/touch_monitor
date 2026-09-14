@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T11:37:46.956Z",
+  "version": "2026-09-14T11:39:53.242Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -38,14 +38,14 @@
       "updated_at": "2026-09-14T09:36:50.424Z"
     },
     {
-      "id": "item_1789385169654",
+      "id": "weblink_1789385992910",
       "slot": 6,
-      "type": "html",
+      "type": "weblink",
       "tag": "ページ",
       "label": "週間天気予報",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385169654.html",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385169024_vq8aiz.png",
-      "updated_at": "2026-09-14T11:26:10.176Z"
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385992548_klc1wq.png",
+      "updated_at": "2026-09-14T11:39:53.242Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-kounoikegumi001.mp4"
