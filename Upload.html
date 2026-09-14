@@ -105,6 +105,19 @@
   // ↓ 実際にデプロイしたCloudflare WorkersのURLに書き換えてください
   const WORKER_URL = "https://little-voice-be13.test-digital-signage-test.workers.dev";
 
+  // このアップロード画面のURLに ?site=現場名 が付いていれば、その現場宛てとして扱う。
+  // 指定がなければ従来通り(最初の現場)として動作する。
+  const SITE_ID = new URLSearchParams(window.location.search).get('site') || '';
+  function siteHeaders(){
+    return SITE_ID ? { "X-Site": encodeURIComponent(SITE_ID) } : {};
+  }
+  if (SITE_ID) {
+    const badge = document.createElement('div');
+    badge.textContent = `現場: ${SITE_ID}`;
+    badge.style.cssText = 'text-align:center;color:#F5A623;font-weight:700;font-size:13px;margin-bottom:12px;';
+    document.body.insertBefore(badge, document.body.firstChild);
+  }
+
   // ---- 通常コンテンツのアップロード ----
   let selectedSlot = null;
   const slotGrid = document.getElementById("slotGrid");
@@ -157,6 +170,7 @@
           const res = await fetch(WORKER_URL, {
             method: "POST",
             headers: {
+              ...siteHeaders(),
               "Content-Type": file.type || "application/octet-stream",
               "X-Upload-Password": encodeURIComponent(password),
               "X-Media-Type": "gallery-image",
@@ -173,6 +187,7 @@
         const commitRes = await fetch(WORKER_URL, {
           method: "POST",
           headers: {
+            ...siteHeaders(),
             "Content-Type": "application/json",
             "X-Upload-Password": encodeURIComponent(password),
             "X-Media-Type": "gallery-commit",
@@ -196,6 +211,7 @@
             const iconRes = await fetch(WORKER_URL, {
               method: "POST",
               headers: {
+                ...siteHeaders(),
                 "Content-Type": iconFile.type || "application/octet-stream",
                 "X-Upload-Password": encodeURIComponent(password),
                 "X-Media-Type": "gallery-image",
@@ -213,6 +229,7 @@
         const res = await fetch(WORKER_URL, {
           method: "POST",
           headers: {
+            ...siteHeaders(),
             "Content-Type": file.type || "application/octet-stream",
             "X-Upload-Password": encodeURIComponent(password),
             "X-Label": encodeURIComponent(label),
@@ -261,6 +278,7 @@
       const res = await fetch(WORKER_URL, {
         method: "POST",
         headers: {
+          ...siteHeaders(),
           "Content-Type": file.type || "application/octet-stream",
           "X-Upload-Password": encodeURIComponent(password),
           "X-Media-Type": "screensaver",
