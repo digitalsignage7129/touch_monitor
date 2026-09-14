@@ -66,15 +66,24 @@
       <option value="video">動画</option>
       <option value="gallery">画像アルバム(複数枚)</option>
       <option value="html">HTMLページ(自作コンテンツ)</option>
+      <option value="weblink">外部ページ(URLを指定)</option>
     </select>
 
     <label id="slotLabel">配置スロット(読み込み中…)</label>
     <div class="slot-grid" id="slotGrid"></div>
     <div class="hint">既に使われているスロットを選ぶと、その位置の内容だけが置き換わります</div>
 
-    <label>ファイル(画像アルバムを選んだ場合は複数枚選択できます)</label>
-    <input type="file" id="file" accept="image/*,video/*,.html,.htm,text/html" multiple>
-    <div class="hint" id="fileCountHint"></div>
+    <div id="fileRow">
+      <label>ファイル(画像アルバムを選んだ場合は複数枚選択できます)</label>
+      <input type="file" id="file" accept="image/*,video/*,.html,.htm,text/html" multiple>
+      <div class="hint" id="fileCountHint"></div>
+    </div>
+
+    <div id="weblinkRow" style="display:none;">
+      <label>表示したいページのURL</label>
+      <input type="text" id="weblinkUrl" placeholder="https://example.com/...">
+      <div class="hint">そのページをそのまま画面に表示します。ファイルのアップロードは不要です。</div>
+    </div>
 
     <div id="htmlIconRow" style="display:none;">
       <label>タイルのアイコン画像(省略可。指定しない場合は🌐マークになります)</label>
@@ -149,16 +158,16 @@
       const data = await res.json();
       const hasQuiz = Array.isArray(data.quiz) && data.quiz.length > 0;
       if (hasQuiz) {
-        slotLabel.textContent = "配置スロット(1〜5のどこに表示するか。6枠目は固定のクイズです)";
+        slotLabel.textContent = "配置スロット(1〜5のどこに表示するか)";
         buildSlotButtons(5);
       } else {
-        slotLabel.textContent = "配置スロット(1〜6のどこに表示するか。クイズは未設定のため6枠すべて使えます)";
+        slotLabel.textContent = "配置スロット(1〜6のどこに表示するか)";
         buildSlotButtons(6);
       }
     } catch (e) {
       // manifestがまだ存在しない(この現場への初回アップロード)場合は
       // クイズ未設定とみなし、6枠すべて使えるようにする
-      slotLabel.textContent = "配置スロット(1〜6のどこに表示するか。クイズは未設定のため6枠すべて使えます)";
+      slotLabel.textContent = "配置スロット(1〜6のどこに表示するか)";
       buildSlotButtons(6);
     }
   }
@@ -174,7 +183,11 @@
   });
 
   document.getElementById("type").addEventListener("change", (e) => {
-    document.getElementById("htmlIconRow").style.display = (e.target.value === "html") ? "block" : "none";
+    const isWeblink = e.target.value === "weblink";
+    const isHtml = e.target.value === "html";
+    document.getElementById("fileRow").style.display = isWeblink ? "none" : "block";
+    document.getElementById("weblinkRow").style.display = isWeblink ? "block" : "none";
+    document.getElementById("htmlIconRow").style.display = (isHtml || isWeblink) ? "block" : "none";
   });
 
   submitBtn.addEventListener("click", async () => {
@@ -183,8 +196,14 @@
     const type = document.getElementById("type").value;
     const fileInput = document.getElementById("file");
     const files = Array.from(fileInput.files || []);
+    const weblinkUrl = document.getElementById("weblinkUrl").value.trim();
 
-    if (!password || !label || files.length === 0 || !selectedSlot) {
+    if (type === "weblink") {
+      if (!password || !label || !weblinkUrl || !selectedSlot) {
+        setStatus(statusEl, "パスワード・表示名・配置スロット・URLをすべて入力してください", "err");
+        return;
+      }
+    } else if (!password || !label || files.length === 0 || !selectedSlot) {
       setStatus(statusEl, "パスワード・表示名・配置スロット・ファイルをすべて入力してください", "err");
       return;
     }
@@ -192,6 +211,51 @@
     submitBtn.disabled = true;
 
     try {
+      if (type === "weblink") {
+        // 外部ページ:ファイルアップロードは行わず、URLをそのままmanifestに登録する
+        let iconUrl = "";
+        const iconFile = document.getElementById("htmlIconFile").files[0];
+        if (iconFile) {
+          setStatus(statusEl, "アイコン画像をアップロード中…", "");
+          const iconRes = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+              ...siteHeaders(),
+              "Content-Type": iconFile.type || "application/octet-stream",
+              "X-Upload-Password": encodeURIComponent(password),
+              "X-Media-Type": "gallery-image",
+              "X-File-Name": encodeURIComponent(iconFile.name),
+            },
+            body: iconFile,
+          });
+          const iconData = await iconRes.json();
+          if (!iconData.ok) throw new Error(iconData.error || "アイコン画像のアップロードに失敗しました");
+          iconUrl = iconData.url;
+        }
+
+        setStatus(statusEl, "登録しています…", "");
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: {
+            ...siteHeaders(),
+            "Content-Type": "application/json",
+            "X-Upload-Password": encodeURIComponent(password),
+            "X-Media-Type": "weblink-commit",
+          },
+          body: JSON.stringify({ label, slot: selectedSlot, url: weblinkUrl, icon: iconUrl || undefined }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "登録に失敗しました");
+        setStatus(statusEl, "登録が完了しました。数分後にモニターへ反映されます。", "ok");
+
+        document.getElementById("label").value = "";
+        document.getElementById("weblinkUrl").value = "";
+        document.getElementById("htmlIconFile").value = "";
+        document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
+        selectedSlot = null;
+        submitBtn.disabled = false;
+        return;
+      }
       if (type === "gallery") {
         // 画像アルバム:1枚ずつアップロードしてURLを集め、最後にまとめて確定する
         const urls = [];
