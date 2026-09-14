@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T09:36:02.908Z",
+  "version": "2026-09-14T09:36:50.424Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -27,6 +27,15 @@
       "label": "うめきた地下化新駅整備工事",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378562089.mp4",
       "updated_at": "2026-09-14T09:36:02.908Z"
+    },
+    {
+      "id": "item_1789378610245",
+      "slot": 5,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378610245.jpg",
+      "updated_at": "2026-09-14T09:36:50.424Z"
     }
   ]
 }
