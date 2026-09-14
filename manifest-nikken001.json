@@ -1,15 +1,6 @@
 {
-  "version": "2026-09-14T03:11:44.819Z",
+  "version": "2026-09-14T03:12:24.633Z",
   "items": [
-    {
-      "id": "item_1789354602808",
-      "slot": 1,
-      "type": "video",
-      "tag": "動画",
-      "label": "オンラインレンタルが便利！",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789354602808.mp4",
-      "updated_at": "2026-09-14T02:56:44.606Z"
-    },
     {
       "id": "item_1789355455434",
       "slot": 2,
@@ -27,6 +18,15 @@
       "label": "全自動簡易タイヤ洗浄機スマートウォッシュゲート",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355503184.mp4",
       "updated_at": "2026-09-14T03:11:44.819Z"
+    },
+    {
+      "id": "item_1789355542196",
+      "slot": 1,
+      "type": "video",
+      "tag": "動画",
+      "label": "オンラインレンタルが便利！",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789355542196.mp4",
+      "updated_at": "2026-09-14T03:12:24.633Z"
     }
   ]
 }
