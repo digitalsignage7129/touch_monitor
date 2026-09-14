@@ -315,9 +315,14 @@ async function syncContent() {
 
   setSyncBadge("更新をダウンロード中…");
   try {
-    // gallery型は media が配列(複数画像)なので、平坦化してURL一覧にする
+    // gallery型は media が配列(複数画像)なので、平坦化してURL一覧にする。
+    // weblink型は外部の生きているページを指すだけなので、事前キャッシュの対象にはしない。
     const mediaUrls = [];
     for (const it of (manifest.items || [])) {
+      if (it.type === 'weblink') {
+        if (it.icon) mediaUrls.push(it.icon);
+        continue;
+      }
       if (it.media) {
         if (Array.isArray(it.media)) mediaUrls.push(...it.media);
         else mediaUrls.push(it.media);
@@ -573,7 +578,7 @@ async function renderGrid(manifest){
     let mediaHtml;
     if (it.type === 'video') {
       mediaHtml = `<span class="fallback-icon">🎬</span>`;
-    } else if (it.type === 'html') {
+    } else if (it.type === 'html' || it.type === 'weblink') {
       if (it.icon) {
         const iconUrl = await resolveMediaUrl(it.icon).catch(() => it.icon);
         mediaHtml = `<img src="${iconUrl}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🌐'}))">`;
@@ -590,7 +595,7 @@ async function renderGrid(manifest){
       ? `<div class="page-badge">全${it.media.length}枚</div>` : '';
 
     tile.innerHTML = `
-      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : it.type === 'html' ? 'ページ' : '写真')}</div>
+      <div class="tile-tag">${it.tag || (it.type === 'video' ? '動画' : (it.type === 'html' || it.type === 'weblink') ? 'ページ' : '写真')}</div>
       ${pageBadge}
       <div class="tile-media">${mediaHtml}</div>
       <div class="tile-label">${it.label || ''}</div>
@@ -646,6 +651,11 @@ async function openViewer(it){
     stage.innerHTML = mediaUrl
       ? `<iframe src="${mediaUrl}" title="${it.label || ''}"></iframe>`
       : `<div>コンテンツを取得できませんでした</div>`;
+  } else if (it.type === 'weblink') {
+    stage.style.display = '';
+    // 外部の生きているページをそのままiframeで表示する。
+    // ローカルキャッシュは使わず、常にネットワーク経由の最新状態を表示する。
+    stage.innerHTML = `<iframe src="${it.media}" title="${it.label || ''}"></iframe>`;
   } else {
     const mediaUrl = await resolveMediaUrl(it.media).catch(() => it.media);
     if (mediaUrl && it.type === 'video') {
