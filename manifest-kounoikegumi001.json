@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-14T11:39:53.242Z",
+  "version": "2026-09-15T03:55:27.911Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -46,6 +46,33 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385992548_klc1wq.png",
       "updated_at": "2026-09-14T11:39:53.242Z"
+    },
+    {
+      "id": "gallery_1789444527615",
+      "slot": 4,
+      "type": "gallery",
+      "tag": "写真",
+      "label": "サステナビリティレポート",
+      "media": [
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444520807_409f1f.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444521134_s764cc.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444521407_rdot87.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444521778_8lqzx3.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444522060_dqii71.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444522353_drr9sy.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444522711_8y5uc5.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444523049_o0trhz.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444523656_1eiy81.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444524096_pfzbma.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444524443_gpzgfv.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444524846_9wxk2w.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444525742_bcqe03.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444526339_q4w1ix.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444526767_99nc6a.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444527105_j3oprh.jpg",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444527308_wwmuvd.jpg"
+      ],
+      "updated_at": "2026-09-15T03:55:27.911Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-kounoikegumi001.mp4"
