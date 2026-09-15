@@ -444,18 +444,15 @@ function isFrameTooDark(ctx, width, height){
   }
 }
 
-function captureVideoFrame(url){
+// 1回分のキャプチャ試行(crossOriginの有無を指定して実行する)
+function tryCaptureOnce(url, useCrossOrigin){
   return new Promise((resolve) => {
     const v = document.createElement('video');
     v.src = url;
     v.muted = true;
     v.playsInline = true;
     v.preload = 'auto';
-    // blob:(ローカルキャッシュ済み)の場合はそもそも同一オリジンなのでCORS設定は不要。
-    // 無条件に付けると、一部のAndroid WebView(タッチスクリーンのKiosk Browser)で
-    // 動画の読み込み自体が失敗し、サムネイルが取得できなくなることがあるため、
-    // 実際にネットワーク越し(http/https)のURLの時だけ設定する。
-    if (/^https?:/i.test(url)) {
+    if (useCrossOrigin) {
       v.crossOrigin = 'anonymous';
     }
     let done = false;
@@ -500,16 +497,23 @@ function captureVideoFrame(url){
         }
         attemptIndex++;
         tryNextOffset();
-      } catch (e) { finish(bestResult); }
+      } catch (e) { finish(bestResult); } // crossOrigin不足等でcanvasが汚染された場合もここに来る
     });
 
     v.addEventListener('error', () => finish(null));
-    // ローカルキャッシュ済み(blob:)なら一瞬で終わるはずなので短めに、
-    // ネットワーク経由(未キャッシュ)の場合は通信が遅い現場も考慮して長めに待つ
     const timeoutMs = /^https?:/i.test(url) ? 15000 : 8000;
     setTimeout(() => finish(bestResult), timeoutMs);
     v.load();
   });
+}
+
+// 端末(WebView)によって「crossOriginを付けたほうが成功する」場合と
+// 「付けないほうが成功する」場合の両方があるため、まずcrossOriginありで試し、
+// 取得できなければ無しでも試す(どちらのタッチスクリーンでも表示できるようにするため)。
+async function captureVideoFrame(url){
+  const withCors = await tryCaptureOnce(url, true);
+  if (withCors) return withCors;
+  return await tryCaptureOnce(url, false);
 }
 
 // 複数ページ(複数画像)ある場合、「下にスクロールできる」ことが伝わるよう
