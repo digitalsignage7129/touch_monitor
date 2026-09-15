@@ -451,7 +451,13 @@ function captureVideoFrame(url){
     v.muted = true;
     v.playsInline = true;
     v.preload = 'auto';
-    v.crossOrigin = 'anonymous';
+    // blob:(ローカルキャッシュ済み)の場合はそもそも同一オリジンなのでCORS設定は不要。
+    // 無条件に付けると、一部のAndroid WebView(タッチスクリーンのKiosk Browser)で
+    // 動画の読み込み自体が失敗し、サムネイルが取得できなくなることがあるため、
+    // 実際にネットワーク越し(http/https)のURLの時だけ設定する。
+    if (/^https?:/i.test(url)) {
+      v.crossOrigin = 'anonymous';
+    }
     let done = false;
     let attemptIndex = 0;
     const finish = (result) => { if (!done) { done = true; resolve(result); } };
@@ -498,7 +504,10 @@ function captureVideoFrame(url){
     });
 
     v.addEventListener('error', () => finish(null));
-    setTimeout(() => finish(bestResult), 8000);
+    // ローカルキャッシュ済み(blob:)なら一瞬で終わるはずなので短めに、
+    // ネットワーク経由(未キャッシュ)の場合は通信が遅い現場も考慮して長めに待つ
+    const timeoutMs = /^https?:/i.test(url) ? 15000 : 8000;
+    setTimeout(() => finish(bestResult), timeoutMs);
     v.load();
   });
 }
