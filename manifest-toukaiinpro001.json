@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23T08:12:18.675Z",
+  "version": "2026-09-23T08:14:01.650Z",
   "items": [
     {
       "id": "item_1790150237032",
@@ -55,6 +55,16 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_precip",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151138162_6dk2xg.jpg",
       "updated_at": "2026-09-23T08:12:18.675Z"
+    },
+    {
+      "id": "weblink_1790151241385",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "リアルタイム雨雲レーダー",
+      "media": "https://digital-signage-led.github.io/led-rain-radar-signage/?prefecture=aichi&content=rain",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151241199_ri119o.jpg",
+      "updated_at": "2026-09-23T08:14:01.650Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-toukaiinpro001.mp4"
