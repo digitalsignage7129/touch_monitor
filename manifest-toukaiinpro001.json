@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23T07:58:08.140Z",
+  "version": "2026-09-23T08:05:05.361Z",
   "items": [
     {
       "id": "item_1790150237032",
@@ -18,6 +18,23 @@
       "label": "社訓",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150288042.png",
       "updated_at": "2026-09-23T07:58:08.140Z"
+    },
+    {
+      "id": "gallery_1790150705094",
+      "slot": 3,
+      "type": "gallery",
+      "tag": "写真",
+      "label": "東海インプル建設ってどんな会社？",
+      "media": [
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150703007_lpd4jy.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150703184_ev0ua3.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150703329_zymn0z.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150703616_h6gi51.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150703762_bfyyq5.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150704762_fzjhtk.webp",
+        "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150704932_b3k9u9.webp"
+      ],
+      "updated_at": "2026-09-23T08:05:05.361Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-toukaiinpro001.mp4"
