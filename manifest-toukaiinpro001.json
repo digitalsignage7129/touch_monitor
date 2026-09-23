@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23T08:11:33.775Z",
+  "version": "2026-09-23T08:12:18.675Z",
   "items": [
     {
       "id": "item_1790150237032",
@@ -45,6 +45,16 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151093099_jmch2d.jpg",
       "updated_at": "2026-09-23T08:11:33.775Z"
+    },
+    {
+      "id": "weblink_1790151138384",
+      "slot": 5,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "中部地方 週間降水確率",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_precip",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151138162_6dk2xg.jpg",
+      "updated_at": "2026-09-23T08:12:18.675Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-toukaiinpro001.mp4"
