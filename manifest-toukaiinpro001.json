@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23T08:14:01.650Z",
+  "version": "2026-09-23T08:19:10.222Z",
   "items": [
     {
       "id": "item_1790150237032",
@@ -47,16 +47,6 @@
       "updated_at": "2026-09-23T08:11:33.775Z"
     },
     {
-      "id": "weblink_1790151138384",
-      "slot": 5,
-      "type": "weblink",
-      "tag": "ページ",
-      "label": "中部地方 週間降水確率",
-      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_precip",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151138162_6dk2xg.jpg",
-      "updated_at": "2026-09-23T08:12:18.675Z"
-    },
-    {
       "id": "weblink_1790151241385",
       "slot": 6,
       "type": "weblink",
@@ -65,6 +55,15 @@
       "media": "https://digital-signage-led.github.io/led-rain-radar-signage/?prefecture=aichi&content=rain",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151241199_ri119o.jpg",
       "updated_at": "2026-09-23T08:14:01.650Z"
+    },
+    {
+      "id": "item_1790151550057",
+      "slot": 5,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790151550057.jpg",
+      "updated_at": "2026-09-23T08:19:10.222Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-toukaiinpro001.mp4"
