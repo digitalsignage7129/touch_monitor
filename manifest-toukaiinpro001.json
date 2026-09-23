@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23T07:57:32.211Z",
+  "version": "2026-09-23T07:58:08.140Z",
   "items": [
     {
       "id": "item_1790150237032",
@@ -9,6 +9,15 @@
       "label": "会社紹介映像",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150237032.mp4",
       "updated_at": "2026-09-23T07:57:17.724Z"
+    },
+    {
+      "id": "item_1790150288042",
+      "slot": 2,
+      "type": "image",
+      "tag": "写真",
+      "label": "社訓",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790150288042.png",
+      "updated_at": "2026-09-23T07:58:08.140Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-toukaiinpro001.mp4"
