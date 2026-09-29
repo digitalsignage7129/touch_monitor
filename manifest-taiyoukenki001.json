@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29T08:11:30.063Z",
+  "version": "2026-09-29T08:13:03.098Z",
   "items": [
     {
       "id": "item_1790669333117",
@@ -45,6 +45,16 @@
       "label": "ご近隣の皆様へ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669489683.jpeg",
       "updated_at": "2026-09-29T08:11:30.063Z"
+    },
+    {
+      "id": "weblink_1790669582821",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669582457_jxinmi.jpg",
+      "updated_at": "2026-09-29T08:13:03.098Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-taiyoukenki001.mp4"
