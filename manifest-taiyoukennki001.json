@@ -1,0 +1,15 @@
+{
+  "version": "2026-09-29T08:52:17.200Z",
+  "items": [
+    {
+      "id": "weblink_1790671936958",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "雨雲",
+      "media": "https://digital-signage-led.github.io/led-rain-radar-signage/?prefecture=aichi&content=rain",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790671936385_ovl3pv.jpg",
+      "updated_at": "2026-09-29T08:52:17.200Z"
+    }
+  ]
+}
