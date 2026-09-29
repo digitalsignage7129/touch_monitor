@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29T08:08:54.239Z",
+  "version": "2026-09-29T08:09:21.121Z",
   "items": [
     {
       "id": "item_1790669333117",
@@ -9,6 +9,15 @@
       "label": "CM「レンタルで応援する」",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669333117.mp4",
       "updated_at": "2026-09-29T08:08:54.239Z"
+    },
+    {
+      "id": "item_1790669357880",
+      "slot": 2,
+      "type": "video",
+      "tag": "動画",
+      "label": "２分でわかる太陽建機レンタル！",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669357880.mp4",
+      "updated_at": "2026-09-29T08:09:21.121Z"
     }
   ]
 }
