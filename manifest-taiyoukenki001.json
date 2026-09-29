@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29T08:11:05.892Z",
+  "version": "2026-09-29T08:11:30.063Z",
   "items": [
     {
       "id": "item_1790669333117",
@@ -36,6 +36,15 @@
       "label": "週間工程表",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669465653.jpg",
       "updated_at": "2026-09-29T08:11:05.892Z"
+    },
+    {
+      "id": "item_1790669489683",
+      "slot": 5,
+      "type": "image",
+      "tag": "写真",
+      "label": "ご近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669489683.jpeg",
+      "updated_at": "2026-09-29T08:11:30.063Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-taiyoukenki001.mp4"
