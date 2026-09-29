@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29T08:09:21.121Z",
+  "version": "2026-09-29T08:10:02.107Z",
   "items": [
     {
       "id": "item_1790669333117",
@@ -18,6 +18,15 @@
       "label": "２分でわかる太陽建機レンタル！",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669357880.mp4",
       "updated_at": "2026-09-29T08:09:21.121Z"
+    },
+    {
+      "id": "item_1790669400917",
+      "slot": 3,
+      "type": "video",
+      "tag": "動画",
+      "label": "CM「町は機械で動いている」",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790669400917.mp4",
+      "updated_at": "2026-09-29T08:10:02.107Z"
     }
   ]
 }
