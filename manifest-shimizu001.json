@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T09:41:04.302Z",
+  "version": "2026-10-09T09:46:10.986Z",
   "items": [
     {
       "id": "item_1791538662774",
@@ -27,6 +27,15 @@
       "label": "「変わらぬ眼差し。」",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791538863435.mp4",
       "updated_at": "2026-10-09T09:41:04.302Z"
+    },
+    {
+      "id": "item_1791539170794",
+      "slot": 4,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791539170794.jpg",
+      "updated_at": "2026-10-09T09:46:10.986Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimizu001.mp4"
