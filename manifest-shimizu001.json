@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T09:38:06.399Z",
+  "version": "2026-10-09T09:40:35.080Z",
   "items": [
     {
       "id": "item_1791538662774",
@@ -9,6 +9,15 @@
       "label": "子供たちに誇れる仕事。清水建設",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791538662774.mp4",
       "updated_at": "2026-10-09T09:37:44.673Z"
+    },
+    {
+      "id": "item_1791538834499",
+      "slot": 3,
+      "type": "video",
+      "tag": "動画",
+      "label": "日本一をつくるヒトの物語",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791538834499.mp4",
+      "updated_at": "2026-10-09T09:40:35.080Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimizu001.mp4"
