@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T09:47:47.894Z",
+  "version": "2026-10-09T09:48:22.225Z",
   "items": [
     {
       "id": "item_1791538662774",
@@ -46,6 +46,16 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791539267075_2yxpbd.jpg",
       "updated_at": "2026-10-09T09:47:47.894Z"
+    },
+    {
+      "id": "weblink_1791539301958",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間降水確率",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_precip",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791539301647_glsj8l.jpg",
+      "updated_at": "2026-10-09T09:48:22.225Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimizu001.mp4"
