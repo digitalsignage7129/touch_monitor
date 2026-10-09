@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T10:10:11.361Z",
+  "version": "2026-10-09T10:10:39.509Z",
   "items": [
     {
       "id": "item_1791540300372",
@@ -37,6 +37,15 @@
       "label": "週間工程表",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540611165.jpg",
       "updated_at": "2026-10-09T10:10:11.361Z"
+    },
+    {
+      "id": "item_1791540639205",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "ご近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540639205.jpeg",
+      "updated_at": "2026-10-09T10:10:39.509Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shiohama001.mp4"
