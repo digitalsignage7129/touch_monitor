@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T10:10:39.509Z",
+  "version": "2026-10-09T10:12:29.692Z",
   "items": [
     {
       "id": "item_1791540300372",
@@ -20,16 +20,6 @@
       "updated_at": "2026-10-09T10:05:55.195Z"
     },
     {
-      "id": "weblink_1791540392287",
-      "slot": 4,
-      "type": "weblink",
-      "tag": "ページ",
-      "label": "週間天気予報",
-      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540392066_svzk3q.jpg",
-      "updated_at": "2026-10-09T10:06:32.555Z"
-    },
-    {
       "id": "item_1791540611165",
       "slot": 2,
       "type": "image",
@@ -46,6 +36,16 @@
       "label": "ご近隣の皆様へ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540639205.jpeg",
       "updated_at": "2026-10-09T10:10:39.509Z"
+    },
+    {
+      "id": "weblink_1791540749421",
+      "slot": 4,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540749131_ih4k6d.jpg",
+      "updated_at": "2026-10-09T10:12:29.692Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shiohama001.mp4"
