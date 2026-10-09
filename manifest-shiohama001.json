@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T10:12:29.692Z",
+  "version": "2026-10-09T10:13:17.384Z",
   "items": [
     {
       "id": "item_1791540300372",
@@ -9,15 +9,6 @@
       "label": "鉄のシオハマ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540300372.mp4",
       "updated_at": "2026-10-09T10:05:04.015Z"
-    },
-    {
-      "id": "item_1791540354946",
-      "slot": 5,
-      "type": "image",
-      "tag": "写真",
-      "label": "近隣の皆様へ",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540354946.jpeg",
-      "updated_at": "2026-10-09T10:05:55.195Z"
     },
     {
       "id": "item_1791540611165",
@@ -46,6 +37,16 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540749131_ih4k6d.jpg",
       "updated_at": "2026-10-09T10:12:29.692Z"
+    },
+    {
+      "id": "weblink_1791540797156",
+      "slot": 5,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間降水確率",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_precip",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540796575_c6hy5g.jpg",
+      "updated_at": "2026-10-09T10:13:17.384Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shiohama001.mp4"
