@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-09T10:05:04.015Z",
+  "version": "2026-10-09T10:05:25.526Z",
   "items": [
     {
       "id": "item_1791540300372",
@@ -9,6 +9,15 @@
       "label": "鉄のシオハマ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540300372.mp4",
       "updated_at": "2026-10-09T10:05:04.015Z"
+    },
+    {
+      "id": "item_1791540325356",
+      "slot": 4,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1791540325356.jpg",
+      "updated_at": "2026-10-09T10:05:25.526Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shiohama001.mp4"
