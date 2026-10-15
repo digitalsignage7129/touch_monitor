@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T05:57:41.894Z",
+  "version": "2026-10-15T05:58:11.408Z",
   "items": [
     {
       "id": "weblink_1792032669832",
@@ -19,6 +19,15 @@
       "label": "株式会社淺沼組～企業紹介～",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043859709.mp4",
       "updated_at": "2026-10-15T05:57:41.894Z"
+    },
+    {
+      "id": "item_1792043890580",
+      "slot": 2,
+      "type": "video",
+      "tag": "動画",
+      "label": "GOOD CYCLE BUILDING 001名古屋支店改修竣工",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043890580.mp4",
+      "updated_at": "2026-10-15T05:58:11.408Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-asanumagumi001.mp4"
