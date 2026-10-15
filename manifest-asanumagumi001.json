@@ -1,0 +1,15 @@
+{
+  "version": "2026-10-15T02:51:10.146Z",
+  "items": [
+    {
+      "id": "weblink_1792032669832",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "騒音・振動計",
+      "media": "https://noise-demo.test-digital-signage-test.workers.dev/?layout=full",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792032669618_m2l3lx.jpg",
+      "updated_at": "2026-10-15T02:51:10.146Z"
+    }
+  ]
+}
