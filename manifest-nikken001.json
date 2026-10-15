@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29T08:42:00.477Z",
+  "version": "2026-10-15T06:39:11.092Z",
   "items": [
     {
       "id": "item_1789369242200",
@@ -47,14 +47,14 @@
       "updated_at": "2026-09-14T09:24:55.771Z"
     },
     {
-      "id": "weblink_1790671320183",
+      "id": "weblink_1792046350777",
       "slot": 6,
       "type": "weblink",
       "tag": "ページ",
-      "label": "雨雲レーダー",
-      "media": "https://digital-signage-led.github.io/led-rain-radar-signage/?prefecture=aichi&content=rain",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1790671319835_6og9lu.jpg",
-      "updated_at": "2026-09-29T08:42:00.477Z"
+      "label": "騒音・振動計",
+      "media": "https://noise-demo.test-digital-signage-test.workers.dev/full",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792046350376_l7yjwy.jpg",
+      "updated_at": "2026-10-15T06:39:11.092Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
