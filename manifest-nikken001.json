@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T06:39:11.092Z",
+  "version": "2026-10-15T06:39:59.879Z",
   "items": [
     {
       "id": "item_1789369242200",
@@ -38,15 +38,6 @@
       "updated_at": "2026-09-14T09:17:57.755Z"
     },
     {
-      "id": "item_1789377895593",
-      "slot": 4,
-      "type": "image",
-      "tag": "写真",
-      "label": "COMPANY GUIDE/採用パンフレット",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377895593.jpg",
-      "updated_at": "2026-09-14T09:24:55.771Z"
-    },
-    {
       "id": "weblink_1792046350777",
       "slot": 6,
       "type": "weblink",
@@ -55,6 +46,16 @@
       "media": "https://noise-demo.test-digital-signage-test.workers.dev/full",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792046350376_l7yjwy.jpg",
       "updated_at": "2026-10-15T06:39:11.092Z"
+    },
+    {
+      "id": "weblink_1792046399619",
+      "slot": 4,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792046399334_lltkeo.jpg",
+      "updated_at": "2026-10-15T06:39:59.879Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
