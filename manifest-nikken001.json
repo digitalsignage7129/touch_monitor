@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T06:41:39.710Z",
+  "version": "2026-10-15T06:42:05.271Z",
   "items": [
     {
       "id": "item_1789369242200",
@@ -18,15 +18,6 @@
       "label": "企業紹介",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377429371.mp4",
       "updated_at": "2026-09-14T09:17:11.991Z"
-    },
-    {
-      "id": "item_1789377476704",
-      "slot": 3,
-      "type": "video",
-      "tag": "動画",
-      "label": "環境プラントの新規建設",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789377476704.mp4",
-      "updated_at": "2026-09-14T09:17:57.755Z"
     },
     {
       "id": "weblink_1792046350777",
@@ -56,6 +47,15 @@
       "label": "環境プラントの新規建設業務に密着",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792046498410.mp4",
       "updated_at": "2026-10-15T06:41:39.710Z"
+    },
+    {
+      "id": "item_1792046525067",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "ご近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792046525067.jpeg",
+      "updated_at": "2026-10-15T06:42:05.271Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nikken001.mp4"
