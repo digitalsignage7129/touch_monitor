@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T06:00:00.429Z",
+  "version": "2026-10-15T06:00:44.176Z",
   "items": [
     {
       "id": "weblink_1792032669832",
@@ -47,6 +47,15 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043999751_859e69.jpg",
       "updated_at": "2026-10-15T06:00:00.429Z"
+    },
+    {
+      "id": "item_1792044043864",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792044043864.jpeg",
+      "updated_at": "2026-10-15T06:00:44.176Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-asanumagumi001.mp4"
