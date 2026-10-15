@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T02:51:41.948Z",
+  "version": "2026-10-15T05:57:41.894Z",
   "items": [
     {
       "id": "weblink_1792032669832",
@@ -10,6 +10,15 @@
       "media": "https://noise-demo.test-digital-signage-test.workers.dev/?layout=full",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792032669618_m2l3lx.jpg",
       "updated_at": "2026-10-15T02:51:10.146Z"
+    },
+    {
+      "id": "item_1792043859709",
+      "slot": 1,
+      "type": "video",
+      "tag": "動画",
+      "label": "株式会社淺沼組～企業紹介～",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043859709.mp4",
+      "updated_at": "2026-10-15T05:57:41.894Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-asanumagumi001.mp4"
