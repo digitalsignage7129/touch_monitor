@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-15T05:58:51.778Z",
+  "version": "2026-10-15T06:00:00.429Z",
   "items": [
     {
       "id": "weblink_1792032669832",
@@ -37,6 +37,16 @@
       "label": "週間工程表",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043931602.jpg",
       "updated_at": "2026-10-15T05:58:51.778Z"
+    },
+    {
+      "id": "weblink_1792044000164",
+      "slot": 4,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792043999751_859e69.jpg",
+      "updated_at": "2026-10-15T06:00:00.429Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-asanumagumi001.mp4"
