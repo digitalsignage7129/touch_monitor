@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:34:40.501Z",
+  "version": "2026-10-16T09:34:57.259Z",
   "items": [
     {
       "id": "item_1792143154030",
@@ -28,6 +28,15 @@
       "label": "近隣の皆様へ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143280083.jpeg",
       "updated_at": "2026-10-16T09:34:40.501Z"
+    },
+    {
+      "id": "item_1792143297028",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143297028.jpg",
+      "updated_at": "2026-10-16T09:34:57.259Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimakikai001.mp4"
