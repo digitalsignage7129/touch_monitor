@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:24:39.514Z",
+  "version": "2026-10-16T09:25:08.036Z",
   "items": [
     {
       "id": "item_1792142149947",
@@ -47,6 +47,15 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142679044_kvjsnw.jpg",
       "updated_at": "2026-10-16T09:24:39.514Z"
+    },
+    {
+      "id": "item_1792142707730",
+      "slot": 5,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142707730.jpg",
+      "updated_at": "2026-10-16T09:25:08.036Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-obayashigumi001.mp4"
