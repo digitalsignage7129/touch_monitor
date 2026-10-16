@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:36:33.567Z",
+  "version": "2026-10-16T09:36:55.090Z",
   "items": [
     {
       "id": "item_1792143154030",
@@ -49,13 +49,14 @@
       "updated_at": "2026-10-16T09:36:06.960Z"
     },
     {
-      "id": "weblink_1792143393296",
+      "id": "weblink_1792143414854",
       "slot": 5,
       "type": "weblink",
       "tag": "ページ",
       "label": "週間降水確率",
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=kinki&content=weekly_precip",
-      "updated_at": "2026-10-16T09:36:33.567Z"
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143414559_pz5vwb.jpg",
+      "updated_at": "2026-10-16T09:36:55.090Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimakikai001.mp4"
