@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:33:01.720Z",
+  "version": "2026-10-16T09:34:00.578Z",
   "items": [
     {
       "id": "item_1792143154030",
@@ -9,6 +9,16 @@
       "label": "紹介動画",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143154030.mp4",
       "updated_at": "2026-10-16T09:32:36.033Z"
+    },
+    {
+      "id": "weblink_1792143240072",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "騒音・振動計",
+      "media": "https://noise-demo.test-digital-signage-test.workers.dev/",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143239759_50pu6x.jpg",
+      "updated_at": "2026-10-16T09:34:00.578Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimakikai001.mp4"
