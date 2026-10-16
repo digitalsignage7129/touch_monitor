@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:22:42.486Z",
+  "version": "2026-10-16T09:24:39.514Z",
   "items": [
     {
       "id": "item_1792142149947",
@@ -37,6 +37,16 @@
       "label": "ご近隣の皆様へ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142562174.jpeg",
       "updated_at": "2026-10-16T09:22:42.486Z"
+    },
+    {
+      "id": "weblink_1792142679274",
+      "slot": 4,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "週間天気予報",
+      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142679044_kvjsnw.jpg",
+      "updated_at": "2026-10-16T09:24:39.514Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-obayashigumi001.mp4"
