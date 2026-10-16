@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:32:36.033Z",
+  "version": "2026-10-16T09:33:01.720Z",
   "items": [
     {
       "id": "item_1792143154030",
@@ -10,5 +10,6 @@
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143154030.mp4",
       "updated_at": "2026-10-16T09:32:36.033Z"
     }
-  ]
+  ],
+  "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimakikai001.mp4"
 }
