@@ -16,7 +16,7 @@
   }
   .card{
     background:var(--panel); border-radius:20px; padding:36px;
-    width:100%; max-width:480px; margin-bottom:24px;
+    width:100%; max-width:560px; margin-bottom:24px;
   }
   h1{ font-size:22px; margin-bottom:6px; }
   h2{ font-size:18px; margin-bottom:6px; }
@@ -31,10 +31,38 @@
     display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-top:6px;
   }
   .slot-opt{
-    padding:10px 0; text-align:center; border-radius:10px; background:#1E2733;
+    padding:0; overflow:hidden; text-align:left; border-radius:10px; background:#1E2733;
     cursor:pointer; font-size:14px; border:2px solid transparent;
   }
-  .slot-opt.selected{ border-color:var(--accent); background:#2A3644; color:var(--accent); font-weight:700; }
+  .slot-opt.selected{ border-color:var(--accent); background:#2A3644; }
+  .slot-thumb{
+    position:relative; aspect-ratio:16/9; background:#151c26; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  .slot-thumb img, .slot-thumb video{ width:100%; height:100%; object-fit:cover; pointer-events:none; }
+  .slot-thumb.empty{ font-size:12px; color:var(--text-dim); }
+  .slot-tag{
+    position:absolute; right:4px; top:4px; font-size:10px; padding:1px 6px; border-radius:6px;
+    background:rgba(0,0,0,.6); color:#fff;
+  }
+  .slot-tag.pending{ left:4px; right:auto; background:var(--accent); color:#20242b; font-weight:700; }
+  .slot-meta{ padding:6px 8px 7px; }
+  .slot-num{ font-weight:700; font-size:13px; }
+  .slot-name{ font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .slot-opt.selected .slot-num, .slot-opt.selected .slot-name{ color:var(--accent); }
+  .slot-note{ font-size:13px; margin-top:10px; min-height:18px; color:var(--text-dim); }
+  .slot-note.warn{ color:var(--accent); }
+  .preview-box{ margin-top:10px; }
+  .preview-box:empty{ display:none; }
+  .preview-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .preview-grid img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:6px; background:#151c26; }
+  .preview-one{ width:100%; max-height:260px; border-radius:10px; background:#000; object-fit:contain; display:block; }
+  .preview-frame{ width:100%; height:260px; border:1px solid #3a4a5e; border-radius:10px; background:#fff; }
+  .preview-cap{ font-size:12px; color:var(--text-dim); margin-top:4px; }
+  .mini-btn{
+    width:auto; margin-top:8px; padding:8px 14px; font-size:13px; border-radius:8px;
+    background:#3a4a5e; color:var(--text);
+  }
   .hint{ font-size:12px; color:var(--text-dim); margin-top:6px; }
   button{
     width:100%; margin-top:26px; padding:14px; border:none; border-radius:12px;
@@ -71,23 +99,28 @@
 
     <label id="slotLabel">配置スロット(読み込み中…)</label>
     <div class="slot-grid" id="slotGrid"></div>
-    <div class="hint">既に使われているスロットを選ぶと、その位置の内容だけが置き換わります</div>
+    <div class="slot-note" id="slotNote"></div>
+    <div class="hint">既に使われているスロットを選ぶと、その位置の内容だけが置き換わります(各枠に今入っている内容を表示しています)</div>
 
     <div id="fileRow">
       <label>ファイル(画像アルバムを選んだ場合は複数枚選択できます)</label>
       <input type="file" id="file" accept="image/*,video/*,.html,.htm,text/html" multiple>
       <div class="hint" id="fileCountHint"></div>
+      <div class="preview-box" id="filePreview"></div>
     </div>
 
     <div id="weblinkRow" style="display:none;">
       <label>表示したいページのURL</label>
       <input type="text" id="weblinkUrl" placeholder="https://example.com/...">
       <div class="hint">そのページをそのまま画面に表示します。ファイルのアップロードは不要です。</div>
+      <button type="button" class="mini-btn" id="weblinkPreviewBtn">プレビューを表示</button>
+      <div class="preview-box" id="weblinkPreview"></div>
     </div>
 
     <div id="htmlIconRow" style="display:none;">
       <label>タイルのアイコン画像(省略可。指定しない場合は🌐マークになります)</label>
       <input type="file" id="htmlIconFile" accept="image/*">
+      <div class="preview-box" id="iconPreview"></div>
     </div>
 
     <button id="submitBtn">アップロードする</button>
@@ -132,30 +165,134 @@
   const slotGrid = document.getElementById("slotGrid");
   const slotLabel = document.getElementById("slotLabel");
 
+  let currentManifest = null;
+  const pendingBySlot = {};   // アップロード直後(まだサイトに反映されていない)内容の仮表示用
+  const TYPE_LABEL = { image:"写真", video:"動画", gallery:"アルバム", html:"HTML", weblink:"外部ページ" };
+
+  function itemForSlot(n){
+    if (pendingBySlot[n]) return pendingBySlot[n];
+    const items = (currentManifest && Array.isArray(currentManifest.items)) ? currentManifest.items : [];
+    const hit = items.filter(it => Number(it.slot) === n);
+    return hit.length ? hit[hit.length - 1] : null;
+  }
+
+  function emojiFor(type){
+    return type === "weblink" ? "🌐" : type === "html" ? "📄" : type === "video" ? "🎬" : "🖼️";
+  }
+
+  function makeThumb(item){
+    const box = document.createElement("div");
+    box.className = "slot-thumb";
+    if (!item) {
+      box.classList.add("empty");
+      box.textContent = "空き";
+      return box;
+    }
+    const fallback = () => { box.innerHTML = ""; box.textContent = emojiFor(item.type); };
+    const addImg = (src) => {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.onerror = fallback;
+      img.src = src;
+      box.appendChild(img);
+    };
+    if (item.type === "image" && typeof item.media === "string") addImg(item.media);
+    else if (item.type === "gallery" && Array.isArray(item.media) && item.media.length) addImg(item.media[0]);
+    else if (item.type === "video" && typeof item.media === "string") {
+      const v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "metadata";
+      v.onerror = fallback;
+      v.src = item.media.startsWith("blob:") ? item.media : item.media + "#t=0.5";
+      box.appendChild(v);
+    }
+    else if (item.icon) addImg(item.icon);
+    else box.textContent = emojiFor(item.type);
+
+    const tag = document.createElement("span");
+    tag.className = "slot-tag";
+    tag.textContent = TYPE_LABEL[item.type] || item.type;
+    box.appendChild(tag);
+    if (item.pending) {
+      const p = document.createElement("span");
+      p.className = "slot-tag pending";
+      p.textContent = "反映待ち";
+      box.appendChild(p);
+    }
+    return box;
+  }
+
+  function renderSlotTile(el, i){
+    const item = itemForSlot(i);
+    el.innerHTML = "";
+    el.appendChild(makeThumb(item));
+    const meta = document.createElement("div");
+    meta.className = "slot-meta";
+    const num = document.createElement("div");
+    num.className = "slot-num";
+    num.textContent = `枠 ${i}`;
+    const name = document.createElement("div");
+    name.className = "slot-name";
+    name.textContent = item ? (item.label || "(名称なし)") : "(未設定)";
+    meta.appendChild(num);
+    meta.appendChild(name);
+    el.appendChild(meta);
+  }
+
+  function updateSlotNote(){
+    const note = document.getElementById("slotNote");
+    if (!selectedSlot) { note.textContent = ""; note.className = "slot-note"; return; }
+    const item = itemForSlot(selectedSlot);
+    if (item) {
+      note.textContent = `枠${selectedSlot}は現在「${item.label || "名称なし"}」(${TYPE_LABEL[item.type] || item.type})です。アップロードするとこの内容が置き換わります。`;
+      note.className = "slot-note warn";
+    } else {
+      note.textContent = `枠${selectedSlot}は空いています。`;
+      note.className = "slot-note";
+    }
+  }
+
   function buildSlotButtons(count){
     slotGrid.innerHTML = "";
     selectedSlot = null;
+    updateSlotNote();
     for (let i = 1; i <= count; i++) {
       const el = document.createElement("div");
       el.className = "slot-opt";
-      el.textContent = `枠 ${i}`;
+      el.dataset.slot = String(i);
+      renderSlotTile(el, i);
       el.addEventListener("click", () => {
         selectedSlot = i;
         document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
         el.classList.add("selected");
+        updateSlotNote();
       });
       slotGrid.appendChild(el);
     }
   }
 
+  function refreshSlot(i){
+    const el = slotGrid.querySelector(`.slot-opt[data-slot="${i}"]`);
+    if (el) renderSlotTile(el, i);
+  }
+
+  // アップロード成功直後に、その枠の表示を新しい内容へ仮置きで切り替える
+  // (サイト側への反映には数分かかるため)
+  function markPending(slot, item){
+    if (!slot) return;
+    pendingBySlot[slot] = { ...item, slot, pending: true };
+    refreshSlot(slot);
+  }
+
   // この現場のmanifestを確認し、クイズが設定されていれば5枠(6枠目は固定クイズ)、
-  // 設定されていなければ6枠すべてアップロード可能として扱う
+  // 設定されていなければ6枠すべてアップロード可能として扱う。
+  // あわせて、各枠に現在入っている内容を表示する。
   async function detectSlotCount(){
     const manifestUrl = SITE_ID ? `manifest-${SITE_ID}.json` : "manifest.json";
     try {
       const res = await fetch(`${manifestUrl}?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error("manifest not found");
       const data = await res.json();
+      currentManifest = data;
       const hasQuiz = Array.isArray(data.quiz) && data.quiz.length > 0;
       if (hasQuiz) {
         slotLabel.textContent = "配置スロット(1〜5のどこに表示するか)";
@@ -176,10 +313,106 @@
   const submitBtn = document.getElementById("submitBtn");
   const statusEl = document.getElementById("status");
 
+  // ---- 選択したファイルのプレビュー ----
+  let previewUrls = [];
+  function clearFilePreview(){
+    previewUrls.forEach(u => URL.revokeObjectURL(u));
+    previewUrls = [];
+    document.getElementById("filePreview").innerHTML = "";
+  }
+  function renderFilePreview(files){
+    clearFilePreview();
+    const box = document.getElementById("filePreview");
+    if (!files.length) return;
+    const isHtmlFile = f => /\.html?$/i.test(f.name) || f.type === "text/html";
+    const first = files[0];
+    const imgs = files.filter(f => (f.type || "").startsWith("image/"));
+    if (imgs.length === files.length && files.length > 1) {
+      const grid = document.createElement("div");
+      grid.className = "preview-grid";
+      imgs.slice(0, 12).forEach(f => {
+        const u = URL.createObjectURL(f); previewUrls.push(u);
+        const img = document.createElement("img"); img.src = u; img.alt = "";
+        grid.appendChild(img);
+      });
+      box.appendChild(grid);
+      const cap = document.createElement("div");
+      cap.className = "preview-cap";
+      cap.textContent = files.length > 12 ? `先頭12枚を表示(全${files.length}枚)` : `全${files.length}枚`;
+      box.appendChild(cap);
+      return;
+    }
+    const u = URL.createObjectURL(first); previewUrls.push(u);
+    if ((first.type || "").startsWith("image/")) {
+      const img = document.createElement("img"); img.className = "preview-one"; img.src = u; img.alt = "";
+      box.appendChild(img);
+    } else if ((first.type || "").startsWith("video/")) {
+      const v = document.createElement("video");
+      v.className = "preview-one"; v.src = u; v.controls = true; v.muted = true; v.playsInline = true; v.preload = "metadata";
+      box.appendChild(v);
+    } else if (isHtmlFile(first)) {
+      const fr = document.createElement("iframe");
+      fr.className = "preview-frame";
+      fr.setAttribute("sandbox", "allow-scripts");
+      fr.src = u;
+      box.appendChild(fr);
+    } else {
+      const cap = document.createElement("div");
+      cap.className = "preview-cap";
+      cap.textContent = `プレビューできない形式です: ${first.name}`;
+      box.appendChild(cap);
+      return;
+    }
+    const cap = document.createElement("div");
+    cap.className = "preview-cap";
+    cap.textContent = files.length > 1 ? `${first.name} ほか${files.length - 1}件(種別が「アルバム」以外の場合は先頭の1件のみ使われます)` : first.name;
+    box.appendChild(cap);
+  }
+
   document.getElementById("file").addEventListener("change", (e) => {
     const count = e.target.files.length;
     document.getElementById("fileCountHint").textContent =
       count > 1 ? `${count}枚を選択中(画像アルバムとしてまとめてアップロードされます)` : "";
+    renderFilePreview(Array.from(e.target.files || []));
+  });
+
+  // アイコン画像のプレビュー
+  let iconPreviewUrl = null;
+  document.getElementById("htmlIconFile").addEventListener("change", (e) => {
+    const box = document.getElementById("iconPreview");
+    if (iconPreviewUrl) { URL.revokeObjectURL(iconPreviewUrl); iconPreviewUrl = null; }
+    box.innerHTML = "";
+    const f = e.target.files[0];
+    if (!f) return;
+    iconPreviewUrl = URL.createObjectURL(f);
+    const img = document.createElement("img");
+    img.className = "preview-one"; img.style.maxHeight = "140px"; img.src = iconPreviewUrl; img.alt = "";
+    box.appendChild(img);
+  });
+
+  // 外部ページ(URL)のプレビュー。表示先サイトが埋め込みを禁止している場合は、モニターでも表示されない
+  document.getElementById("weblinkPreviewBtn").addEventListener("click", () => {
+    const box = document.getElementById("weblinkPreview");
+    box.innerHTML = "";
+    const raw = document.getElementById("weblinkUrl").value.trim();
+    let u;
+    try { u = new URL(raw); if (!/^https?:$/.test(u.protocol)) throw 0; }
+    catch (e) {
+      const cap = document.createElement("div");
+      cap.className = "preview-cap";
+      cap.textContent = "http:// または https:// から始まる正しいURLを入力してください";
+      box.appendChild(cap);
+      return;
+    }
+    const fr = document.createElement("iframe");
+    fr.className = "preview-frame";
+    fr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+    fr.src = u.toString();
+    box.appendChild(fr);
+    const cap = document.createElement("div");
+    cap.className = "preview-cap";
+    cap.textContent = "白紙やエラーになる場合、そのページは埋め込み表示に対応していない可能性があります(モニターでも同様に表示されません)。";
+    box.appendChild(cap);
   });
 
   document.getElementById("type").addEventListener("change", (e) => {
@@ -209,6 +442,7 @@
     }
 
     submitBtn.disabled = true;
+    const slotUsed = selectedSlot;
 
     try {
       if (type === "weblink") {
@@ -248,11 +482,15 @@
         if (!data.ok) throw new Error(data.error || "登録に失敗しました");
         setStatus(statusEl, "登録が完了しました。数分後にモニターへ反映されます。", "ok");
 
+        markPending(slotUsed, { type: "weblink", label, media: weblinkUrl, icon: iconFile ? URL.createObjectURL(iconFile) : (iconUrl || undefined) });
         document.getElementById("label").value = "";
         document.getElementById("weblinkUrl").value = "";
         document.getElementById("htmlIconFile").value = "";
+        document.getElementById("iconPreview").innerHTML = "";
+        document.getElementById("weblinkPreview").innerHTML = "";
         document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
         selectedSlot = null;
+        updateSlotNote();
         submitBtn.disabled = false;
         return;
       }
@@ -293,6 +531,7 @@
         if (!commitData.ok) throw new Error(commitData.error || "確定処理に失敗しました");
 
         setStatus(statusEl, `アップロードが完了しました(全${urls.length}枚)。数分後にモニターへ反映されます。`, "ok");
+        markPending(slotUsed, { type: "gallery", label, media: files.map(f => URL.createObjectURL(f)) });
       } else {
         // 通常コンテンツ(画像1枚・動画・HTML)
         const file = files[0];
@@ -338,13 +577,23 @@
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "アップロードに失敗しました");
         setStatus(statusEl, "アップロードが完了しました。数分後にモニターへ反映されます。", "ok");
+        const iconFileDone = document.getElementById("htmlIconFile").files[0];
+        markPending(slotUsed, {
+          type, label,
+          media: (type === "image" || type === "video") ? URL.createObjectURL(file) : undefined,
+          icon: iconFileDone ? URL.createObjectURL(iconFileDone) : undefined,
+        });
       }
 
       document.getElementById("label").value = "";
       fileInput.value = "";
+      clearFilePreview();
+      document.getElementById("fileCountHint").textContent = "";
       document.getElementById("htmlIconFile").value = "";
+      document.getElementById("iconPreview").innerHTML = "";
       document.querySelectorAll(".slot-opt").forEach(n => n.classList.remove("selected"));
       selectedSlot = null;
+      updateSlotNote();
     } catch (e) {
       setStatus(statusEl, "エラー: " + (e.message || "通信エラーが発生しました。時間をおいて再度お試しください。"), "err");
     } finally {
