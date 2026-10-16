@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:34:00.578Z",
+  "version": "2026-10-16T09:34:40.501Z",
   "items": [
     {
       "id": "item_1792143154030",
@@ -19,6 +19,15 @@
       "media": "https://noise-demo.test-digital-signage-test.workers.dev/",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143239759_50pu6x.jpg",
       "updated_at": "2026-10-16T09:34:00.578Z"
+    },
+    {
+      "id": "item_1792143280083",
+      "slot": 2,
+      "type": "image",
+      "tag": "写真",
+      "label": "近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792143280083.jpeg",
+      "updated_at": "2026-10-16T09:34:40.501Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-shimakikai001.mp4"
