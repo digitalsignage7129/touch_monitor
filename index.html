@@ -58,7 +58,12 @@
   .tile.quiz-tile{ background: linear-gradient(135deg, #2F3D4D, #26313F); }
   .tile:not(.empty):active{ transform: scale(0.97); border-color:var(--accent); background:var(--panel-hi); }
   .tile-media{ position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#10151c; }
-  .tile-media img, .tile-media video{ width:100%; height:100%; object-fit:cover; }
+  /* サムネイルは切り取らず全体を表示し、余白は同じ画像をぼかした背景で埋める */
+  .tile-media::before{
+    content:""; position:absolute; top:-20px; left:-20px; right:-20px; bottom:-20px;
+    background:var(--thumb, none) center/cover no-repeat; filter:blur(18px) brightness(0.55);
+  }
+  .tile-media img, .tile-media video{ position:relative; width:100%; height:100%; object-fit:contain; }
   .tile-media .fallback-icon{ font-size:48px; opacity:0.5; }
   .tile-label{
     position:relative; padding: 14px 16px 14px;
@@ -227,7 +232,7 @@
   <div id="quiz-view">
     <div class="viewer-topbar">
       <button class="back-btn" id="quizBackBtn">&larr; 一覧に戻る</button>
-      <div class="viewer-title" id="quizViewerTitle">日本国土開発クイズ</div>
+      <div class="viewer-title" id="quizViewerTitle">クイズ</div>
     </div>
     <div class="quiz-body" id="quizBody"></div>
   </div>
@@ -384,10 +389,9 @@ async function setupScreensaver(manifest){
 // manifest.json に quiz(問題一覧)が定義されていれば、その現場専用の
 // クイズに差し替える。
 //
-// 【重要】site指定なし(これまでの現場)の場合のみ、未指定時に
-// デフォルト(日本国土開発クイズ)を表示する。site指定がある(新しく
-// 追加した現場)の場合、quizが明示的に定義されていない限りクイズ自体を
-// 表示しない(他社の現場で無関係な会社のクイズが出てしまうのを防ぐため)。
+// 【重要】共通のデフォルト問題は持たない。manifestにquizが明示的に
+// 定義されている現場だけクイズを表示する(他社の現場で無関係な会社の
+// クイズが出てしまうのを防ぐため)。
 let quizAvailable = false;
 function setupQuizFromManifest(manifest){
   if (Array.isArray(manifest.quiz) && manifest.quiz.length > 0) {
@@ -405,17 +409,11 @@ function setupQuizFromManifest(manifest){
     console.warn('manifest.quiz の形式が不正なため、この現場のクイズは表示しません。');
   }
 
-  if (!SITE_ID) {
-    // これまでの現場(site指定なし)は、従来通りデフォルトクイズを表示する
-    QUIZ_QUESTIONS = DEFAULT_QUIZ_QUESTIONS;
-    quizAvailable = true;
-    effectiveSlotCount = 5;
-  } else {
-    // 新しい現場でquiz未定義の場合は、クイズタイル自体を出さず、
-    // 6枠目も通常のアップロード枠として使えるようにする
-    quizAvailable = false;
-    effectiveSlotCount = 6;
-  }
+  // quiz未定義の場合は、クイズタイル自体を出さず、
+  // 6枠目も通常のアップロード枠として使えるようにする
+  QUIZ_QUESTIONS = [];
+  quizAvailable = false;
+  effectiveSlotCount = 6;
 }
 
 function bySlot(items){
@@ -567,6 +565,11 @@ async function renderGalleryInto(container, mediaList){
   }
 }
 
+function setThumbBackdrop(mediaDiv, src){
+  if (!mediaDiv || !src) return;
+  mediaDiv.style.setProperty('--thumb', 'url("' + String(src).replace(/"/g, '%22') + '")');
+}
+
 async function renderGrid(manifest){
   const gridWrap = document.getElementById('gridWrap');
   gridWrap.innerHTML = "";
@@ -615,6 +618,10 @@ async function renderGrid(manifest){
     `;
     tile.addEventListener('click', () => openViewer(it));
     gridWrap.appendChild(tile);
+    {
+      const thumbImg = tile.querySelector('.tile-media img');
+      if (thumbImg) setThumbBackdrop(tile.querySelector('.tile-media'), thumbImg.getAttribute('src'));
+    }
 
     if (it.type === 'video' && mediaUrl) {
       captureVideoFrame(mediaUrl).then((dataUrl) => {
@@ -625,6 +632,7 @@ async function renderGrid(manifest){
           const img = document.createElement('img');
           img.src = dataUrl;
           mediaDiv.appendChild(img);
+          setThumbBackdrop(mediaDiv, dataUrl);
         }
       });
     }
@@ -633,9 +641,7 @@ async function renderGrid(manifest){
   if (quizAvailable) {
     const quizTile = document.createElement('div');
     quizTile.className = 'tile quiz-tile';
-    const quizLabel = (QUIZ_QUESTIONS === DEFAULT_QUIZ_QUESTIONS)
-      ? '日本国土開発クイズに挑戦!'
-      : 'クイズに挑戦!';
+    const quizLabel = 'クイズに挑戦!';
     quizTile.innerHTML = `
       <div class="tile-tag">クイズ</div>
       <div class="tile-media"><img src="assets/quiz-icon.png" alt="クイズ" style="object-fit:contain;padding:14px;background:#fff;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-icon',textContent:'🧩'}))"></div>
@@ -707,7 +713,7 @@ tick();
 setInterval(tick, 1000 * 30);
 
 /* =========================================================
-   日本国土開発クイズ
+   クイズ
    ========================================================= */
 
 const QUIZ_SOUNDS = {
@@ -729,74 +735,10 @@ function playQuizSound(key){
   } catch (e) {}
 }
 
-// 現場のmanifest.jsonに quiz(問題一覧)が指定されていればそちらを使い、
-// 無ければこのデフォルト(日本国土開発クイズ)を使う。
-const DEFAULT_QUIZ_QUESTIONS = [
-  {
-    emoji: "🏚️",
-    q: "日本国土開発が生まれたのは、どんな時代?",
-    choices: [
-      "🏚️ 戦争が終わって、国をもう一度立て直そうとしていた時代",
-      "🦖 恐竜がいた大昔",
-      "🏯 お城がたくさん建てられていた江戸時代",
-      "🚀 まだだれも生まれていない未来"
-    ],
-    correct: 0,
-    explain: "1951年、戦争で荒れてしまった国を元気にするために生まれた会社なんだ。"
-  },
-  {
-    emoji: "🚜",
-    q: "工事の現場で活躍する、大きな力持ちの乗り物といえば?",
-    choices: [
-      "🚀 ロケット",
-      "🚜 ブルドーザーなどの重機",
-      "🚁 荷物を運ぶヘリコプター",
-      "🛥️ 海を進む潜水艦"
-    ],
-    correct: 1,
-    explain: "日本国土開発は、いち早くブルドーザーなどの重機を取り入れて工事をしてきたよ。"
-  },
-  {
-    emoji: "🤝",
-    q: "大きな地震で困っている街があったとき、日本国土開発は何をした?",
-    choices: [
-      "👀 何もせず様子を見ていた",
-      "📷 写真だけ撮ってすぐ帰った",
-      "🤝 力を合わせて復興のお手伝いをした",
-      "🚚 街から遠くへ引っ越した"
-    ],
-    correct: 2,
-    explain: "東日本大震災のときも、いち早く駆けつけて復興を支えたんだ。"
-  },
-  {
-    emoji: "☀️",
-    q: "太陽の光を電気に変える発電所も作っているよ。その発電方法は?",
-    choices: [
-      "☀️ 太陽光発電",
-      "🔥 石炭を燃やすだけの発電",
-      "💨 風の力だけを使う発電",
-      "🌊 波の力だけを使う発電"
-    ],
-    correct: 0,
-    explain: "たくさんの太陽光発電所を作って、地球にやさしいエネルギーづくりにも取り組んでいるよ。"
-  },
-  {
-    emoji: "🌉",
-    q: "日本国土開発が作っているものはどれ?",
-    choices: [
-      "🍰 お菓子や洋服",
-      "🌉 トンネルや橋、道路などの街の土台",
-      "✈️ 飛行機そのもの",
-      "🎮 テレビゲーム"
-    ],
-    correct: 1,
-    explain: "みんなが安心して暮らせるように、道路・橋・トンネルなど、街の土台を作っているよ。"
-  }
-];
-
 // 実際にクイズで使う問題一覧。manifest読み込み時にsetupQuizFromManifest()で
-// 現場ごとの内容に差し替わる(なければデフォルトのまま)。
-let QUIZ_QUESTIONS = DEFAULT_QUIZ_QUESTIONS;
+// 現場ごとの内容に差し替わる。manifestにquizが無い現場にはクイズ自体を出さない
+// (他社・他現場の内容が混ざらないよう、共通のデフォルト問題は持たない)。
+let QUIZ_QUESTIONS = [];
 
 let quizIndex = 0;
 let quizScore = 0;
@@ -804,8 +746,7 @@ let quizScore = 0;
 function openQuiz(){
   quizIndex = 0;
   quizScore = 0;
-  document.getElementById('quizViewerTitle').textContent =
-    (QUIZ_QUESTIONS === DEFAULT_QUIZ_QUESTIONS) ? '日本国土開発クイズ' : 'クイズ';
+  document.getElementById('quizViewerTitle').textContent = 'クイズ';
   document.getElementById('grid-view').style.display = 'none';
   document.getElementById('quiz-view').classList.add('active');
   renderQuizQuestion();
@@ -875,13 +816,13 @@ function renderQuizResult(){
   const total = QUIZ_QUESTIONS.length;
   let emoji = "🌱";
   let msg = "また挑戦してね!";
-  if (quizScore === total) { emoji = "🏆"; msg = "パーフェクト!日本国土開発博士だね!"; playQuizSound('perfect'); }
+  if (quizScore === total) { emoji = "🏆"; msg = "パーフェクト!クイズ博士だね!"; playQuizSound('perfect'); }
   else { playQuizSound('other_result'); if (quizScore >= Math.ceil(total * 0.6)) { emoji = "🎉"; msg = "よくできました!"; } }
 
   body.innerHTML = `
     <div class="quiz-result-emoji">${emoji}</div>
     <div class="quiz-result-text">${quizScore} / ${total} 問正解!</div>
-    <div class="quiz-result-sub">${msg}<br>日本国土開発は、みんなの街を元気にするお仕事をしています。</div>
+    <div class="quiz-result-sub">${msg}</div>
     <button class="quiz-next" id="quizRetryBtn">もう一度挑戦する</button>
   `;
   document.getElementById('quizRetryBtn').addEventListener('click', openQuiz);
