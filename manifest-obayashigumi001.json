@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:18:01.539Z",
+  "version": "2026-10-16T09:22:42.486Z",
   "items": [
     {
       "id": "item_1792142149947",
@@ -28,6 +28,15 @@
       "media": "https://noise-demo.test-digital-signage-test.workers.dev/",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142280923_jgmgr4.jpg",
       "updated_at": "2026-10-16T09:18:01.539Z"
+    },
+    {
+      "id": "item_1792142562174",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "ご近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142562174.jpeg",
+      "updated_at": "2026-10-16T09:22:42.486Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-obayashigumi001.mp4"
