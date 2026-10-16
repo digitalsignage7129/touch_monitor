@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16T09:15:51.786Z",
+  "version": "2026-10-16T09:16:31.697Z",
   "items": [
     {
       "id": "item_1792142149947",
@@ -9,6 +9,15 @@
       "label": "大林組 TVCM つくるを拓く｢継承｣篇 30秒",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142149947.mp4",
       "updated_at": "2026-10-16T09:15:51.786Z"
+    },
+    {
+      "id": "item_1792142190839",
+      "slot": 2,
+      "type": "video",
+      "tag": "動画",
+      "label": "大林組 TVCM つくるを拓く｢高み｣篇 30秒",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792142190839.mp4",
+      "updated_at": "2026-10-16T09:16:31.697Z"
     }
   ]
 }
