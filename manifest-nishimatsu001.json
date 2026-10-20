@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-20T06:26:05.820Z",
+  "version": "2026-10-20T06:26:24.819Z",
   "items": [
     {
       "id": "weblink_1792477479077",
@@ -28,6 +28,15 @@
       "label": "近隣の皆様へ",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792477565558.jpeg",
       "updated_at": "2026-10-20T06:26:05.820Z"
+    },
+    {
+      "id": "item_1792477584243",
+      "slot": 5,
+      "type": "image",
+      "tag": "写真",
+      "label": "週間工程表",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792477584243.jpg",
+      "updated_at": "2026-10-20T06:26:24.819Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nishimatsu001.mp4"
