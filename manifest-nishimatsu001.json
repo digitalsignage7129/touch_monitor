@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-20T06:27:32.532Z",
+  "version": "2026-10-20T06:28:08.598Z",
   "items": [
     {
       "id": "weblink_1792477479077",
@@ -47,6 +47,15 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=kinki&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792477652071_5s84fn.jpg",
       "updated_at": "2026-10-20T06:27:32.532Z"
+    },
+    {
+      "id": "item_1792477688205",
+      "slot": 2,
+      "type": "video",
+      "tag": "動画",
+      "label": "【西松建設】ブランディングムービー進む。進む。進む。",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1792477688205.mp4",
+      "updated_at": "2026-10-20T06:28:08.598Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-nishimatsu001.mp4"
