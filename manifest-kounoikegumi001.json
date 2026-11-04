@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-15T03:55:27.911Z",
+  "version": "2026-11-04T11:11:24.933Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -38,16 +38,6 @@
       "updated_at": "2026-09-14T09:36:50.424Z"
     },
     {
-      "id": "weblink_1789385992910",
-      "slot": 6,
-      "type": "weblink",
-      "tag": "ページ",
-      "label": "週間天気予報",
-      "media": "https://digital-signage-led.github.io/led-weather-signage/?region=chubu&content=weekly_weather",
-      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789385992548_klc1wq.png",
-      "updated_at": "2026-09-14T11:39:53.242Z"
-    },
-    {
       "id": "gallery_1789444527615",
       "slot": 4,
       "type": "gallery",
@@ -73,6 +63,16 @@
         "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789444527308_wwmuvd.jpg"
       ],
       "updated_at": "2026-09-15T03:55:27.911Z"
+    },
+    {
+      "id": "weblink_1793790684699",
+      "slot": 6,
+      "type": "weblink",
+      "tag": "ページ",
+      "label": "騒音・振動計",
+      "media": "https://noise-demo.test-digital-signage-test.workers.dev/",
+      "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1793790683714_45p7ir.jpg",
+      "updated_at": "2026-11-04T11:11:24.933Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-kounoikegumi001.mp4"
