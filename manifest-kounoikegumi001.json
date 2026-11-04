@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-04T11:12:17.611Z",
+  "version": "2026-11-04T11:12:59.625Z",
   "items": [
     {
       "id": "item_1789378489231",
@@ -18,15 +18,6 @@
       "label": "鴻池組SDGs講座！",
       "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378515602.mp4",
       "updated_at": "2026-09-14T09:35:16.294Z"
-    },
-    {
-      "id": "item_1789378562089",
-      "slot": 3,
-      "type": "video",
-      "tag": "動画",
-      "label": "うめきた地下化新駅整備工事",
-      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1789378562089.mp4",
-      "updated_at": "2026-09-14T09:36:02.908Z"
     },
     {
       "id": "item_1789378610245",
@@ -56,6 +47,15 @@
       "media": "https://digital-signage-led.github.io/led-weather-signage/?region=kinki&content=weekly_weather",
       "icon": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1793790736655_etr7se.jpg",
       "updated_at": "2026-11-04T11:12:17.611Z"
+    },
+    {
+      "id": "item_1793790778928",
+      "slot": 3,
+      "type": "image",
+      "tag": "写真",
+      "label": "近隣の皆様へ",
+      "media": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/item_1793790778928.jpeg",
+      "updated_at": "2026-11-04T11:12:59.625Z"
     }
   ],
   "screensaver": "https://pub-e4bd70c5c231453aa69278880637c92d.r2.dev/media/screensaver-kounoikegumi001.mp4"
